@@ -1,65 +1,135 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Dumbbell, Shield, CheckCircle, ChevronRight } from "lucide-react";
+
+interface WeekStatus {
+  dayA: { done: boolean; date?: string };
+  dayB: { done: boolean; date?: string };
+  bjjCount: number;
+}
+
+// Lemon-chiffon card background — warm, neutral, holds both sections
+const CARD_BG  = "rgba(252, 245, 199, 0.55)";  // lemon-chiffon
+
+export default function Dashboard() {
+  const [weekStatus, setWeekStatus] = useState<WeekStatus>({
+    dayA: { done: false },
+    dayB: { done: false },
+    bjjCount: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchWeek() {
+      try {
+        const res = await fetch("/api/workouts/week");
+        if (res.ok) setWeekStatus(await res.json());
+      } catch { /* offline */ }
+      finally { setLoading(false); }
+    }
+    fetchWeek();
+  }, []);
+
+  const today = new Date().toLocaleDateString("en-AU", {
+    weekday: "long", month: "long", day: "numeric",
+  });
+
+  const gymDone = (weekStatus.dayA.done ? 1 : 0) + (weekStatus.dayB.done ? 1 : 0);
+  const total   = gymDone + weekStatus.bjjCount;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="pt-10 pb-6 space-y-8">
+
+      {/* Header */}
+      <div className="space-y-1">
+        <h1 className="text-3xl font-bold text-[#495057] tracking-tight">Gymmy Neutron</h1>
+        <p className="text-gray-400 text-sm">{today}</p>
+      </div>
+
+      {/* Stats row — always white, no tint */}
+      {!loading && (
+        <div className="grid grid-cols-3 gap-3">
+          <StatChip label="Gym"   value={gymDone} max={2} />
+          <StatChip label="BJJ"   value={weekStatus.bjjCount} />
+          <StatChip label="Total" value={total} />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      )}
+
+      {/* One unified action card — no dividers, all three equally spaced */}
+      <div className="rounded-3xl p-5 border border-[#f0e8a0]/60" style={{ background: CARD_BG }}>
+
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-5">This week</p>
+
+        <div className="flex flex-col gap-4">
+          <DayRow day="A" done={weekStatus.dayA.done} date={weekStatus.dayA.date} />
+          <DayRow day="B" done={weekStatus.dayB.done} date={weekStatus.dayB.date} />
+
+          <Link href="/bjj">
+            <div className="bg-white rounded-2xl px-5 py-5 flex items-center justify-between shadow-sm border border-white/80">
+              <div className="flex items-center gap-4">
+                <Shield size={18} className="text-gray-400 flex-shrink-0" />
+                <div>
+                  <p className="font-semibold text-[#495057] text-base">Log BJJ Session</p>
+                  <p className="text-gray-400 text-xs mt-0.5">
+                    {weekStatus.bjjCount > 0
+                      ? `${weekStatus.bjjCount} session${weekStatus.bjjCount !== 1 ? "s" : ""} this week`
+                      : "Track your training"}
+                  </p>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-gray-300 flex-shrink-0" />
+            </div>
+          </Link>
         </div>
-      </main>
+
+      </div>
     </div>
+  );
+}
+
+function StatChip({ label, value, max }: { label: string; value: number; max?: number }) {
+  return (
+    <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+      <p className="text-2xl font-bold text-[#495057] leading-none">
+        {value}{max && <span className="text-base text-gray-400 font-medium">/{max}</span>}
+      </p>
+      <p className="text-gray-500 text-xs mt-1.5 font-medium">{label}</p>
+    </div>
+  );
+}
+
+function DayRow({ day, done, date }: { day: "A" | "B"; done: boolean; date?: string }) {
+  if (done) {
+    return (
+      <Link href={`/workout?day=${day}&view=true`}>
+        <div className="bg-white rounded-2xl px-5 py-5 flex items-center justify-between shadow-sm border border-white/80 opacity-55">
+          <div className="flex items-center gap-4">
+            <CheckCircle size={18} className="text-green-500 flex-shrink-0" />
+            <div>
+              <p className="font-semibold text-gray-700 text-base">Day {day}</p>
+              <p className="text-gray-400 text-xs mt-0.5">{date ? `Done ${date}` : "Completed"}</p>
+            </div>
+          </div>
+          <span className="text-xs bg-green-50 text-green-600 font-semibold px-3 py-1 rounded-full">Done</span>
+        </div>
+      </Link>
+    );
+  }
+
+  return (
+    <Link href={`/workout?day=${day}`}>
+      <div className="bg-white rounded-2xl px-5 py-5 flex items-center justify-between shadow-sm border border-white/80 active:opacity-80 transition-opacity">
+        <div className="flex items-center gap-4">
+          <Dumbbell size={18} className="text-gray-400 flex-shrink-0" />
+          <div>
+            <p className="font-semibold text-[#495057] text-base">Day {day}</p>
+            <p className="text-gray-400 text-xs mt-0.5">Ready to log</p>
+          </div>
+        </div>
+        <ChevronRight size={16} className="text-gray-300 flex-shrink-0" />
+      </div>
+    </Link>
   );
 }
