@@ -104,7 +104,10 @@ function DayRow({ day, done, date }: { day: "A" | "B"; done: boolean; date?: str
   }
 
   return (
-    <Link href={`/workout?day=${day}`}>
+    <Link
+      href={`/workout?day=${day}`}
+      onClick={() => { try { localStorage.removeItem("gymmy_workout_draft"); } catch {} }}
+    >
       <div className="bg-white rounded-2xl px-5 py-5 flex items-center justify-between shadow-sm border border-white/80 active:opacity-80 transition-opacity">
         <div className="flex items-center gap-4">
           <Dumbbell size={18} className="text-gray-400 flex-shrink-0" />
