@@ -1,10 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Exercise, WorkoutSet, BackExtensionMode, WeightUnit } from "@/lib/types";
 import { Plus, ChevronDown, ChevronUp } from "lucide-react";
 import SetInput from "./SetInput";
 import { cn } from "@/lib/utils";
+import {
+  ProgressionResult,
+  ACTION_NO_DATA,
+  ACTION_INCREASE_WAVE,
+  ACTION_HOLD,
+  ACTION_DELOAD_SMART,
+  ACTION_DELOAD_FULL,
+  ACTION_BAD_DAY_RECOVERY,
+  ACTION_RAMP_UP,
+  ACTION_ADD_WEIGHT_BW,
+  ACTION_INCREASE_REPS_BW,
+} from "@/lib/progressionV2";
 
 interface ExerciseCardProps {
   exercise: Exercise;
@@ -18,12 +30,105 @@ const MODES: { value: BackExtensionMode; label: string }[] = [
   { value: "weighted", label: "Weighted" },
 ];
 
+// ── Suggestion display helpers ────────────────────────────────────────────────
+
+interface SuggestionStyle {
+  bg: string;
+  text: string;
+  border: string;
+  icon: string;
+  label: string;
+}
+
+function getSuggestionStyle(action: string): SuggestionStyle {
+  switch (action) {
+    case ACTION_INCREASE_WAVE:
+      return { bg: "bg-green-50", text: "text-green-700", border: "border-green-100", icon: "↑", label: "Increase" };
+    case ACTION_DELOAD_SMART:
+      return { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-100", icon: "↘", label: "Smart deload" };
+    case ACTION_DELOAD_FULL:
+      return { bg: "bg-red-50", text: "text-red-600", border: "border-red-100", icon: "⬇", label: "Full deload" };
+    case ACTION_BAD_DAY_RECOVERY:
+      return { bg: "bg-blue-50", text: "text-blue-600", border: "border-blue-100", icon: "⟳", label: "Recovery" };
+    case ACTION_RAMP_UP:
+      return { bg: "bg-purple-50", text: "text-purple-600", border: "border-purple-100", icon: "↗", label: "Ramp up" };
+    case ACTION_ADD_WEIGHT_BW:
+      return { bg: "bg-green-50", text: "text-green-700", border: "border-green-100", icon: "↑", label: "Add weight" };
+    case ACTION_INCREASE_REPS_BW:
+      return { bg: "bg-green-50", text: "text-green-700", border: "border-green-100", icon: "+", label: "Add reps" };
+    default: // hold
+      return { bg: "bg-gray-50", text: "text-gray-500", border: "border-gray-100", icon: "—", label: "Hold" };
+  }
+}
+
+function getSuggestionSummary(result: ProgressionResult): string {
+  const { action, suggestedSets } = result;
+
+  if (action === ACTION_INCREASE_WAVE) {
+    const bumped = suggestedSets.find((s) => s.note.includes("↑"));
+    if (bumped) return `Bump set ${bumped.setNumber} → ${bumped.weight}kg`;
+    return "Increase";
+  }
+  if (action === ACTION_HOLD) {
+    const tw = suggestedSets.length > 0 ? Math.max(...suggestedSets.map((s) => s.weight)) : null;
+    return tw ? `Hold at ${tw}kg` : "Hold";
+  }
+  if (action === ACTION_DELOAD_SMART) {
+    const feeder = suggestedSets[0];
+    return feeder ? `Smart deload — feeder sets at ${feeder.weight}kg` : "Smart deload";
+  }
+  if (action === ACTION_DELOAD_FULL) {
+    const w = suggestedSets[0]?.weight;
+    return w != null ? `Full deload → ${w}kg` : "Full deload";
+  }
+  if (action === ACTION_BAD_DAY_RECOVERY) {
+    return "Recovery — match last good session";
+  }
+  if (action === ACTION_RAMP_UP) {
+    return "Ramp up — gap detected (>14 days)";
+  }
+  if (action === ACTION_ADD_WEIGHT_BW) return "Add weight or increase reps target";
+  if (action === ACTION_INCREASE_REPS_BW) return "Add 1–2 reps per set";
+  return "";
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
 export default function ExerciseCard({ exercise, sets, onSetsChange }: ExerciseCardProps) {
   const isBackExtension = exercise.name === "Back Extensions";
   const isFrontRackCarry = exercise.name === "Front Rack Carry";
   const [mode, setMode]               = useState<BackExtensionMode>("reps");
   const [unit, setUnit]               = useState<WeightUnit>(exercise.defaultUnit ?? "kg");
   const [showNotes, setShowNotes]     = useState(false);
+  const [suggestion, setSuggestion]   = useState<ProgressionResult | null>(null);
+
+  const effectiveType = isBackExtension
+    ? mode === "hold" ? "timed" : mode === "weighted" ? "weighted" : "bodyweight"
+    : exercise.type;
+
+  const hasNotes = isFrontRackCarry || !!exercise.notes;
+
+  // Fetch progression suggestion for weighted / timed_carry / bodyweight exercises
+  useEffect(() => {
+    const fetchableTypes = ["weighted", "bodyweight"];
+    if (!fetchableTypes.includes(exercise.type)) return;
+
+    const params = new URLSearchParams({
+      exerciseId:    exercise.id,
+      exerciseName:  exercise.name,
+      exerciseType:  exercise.type,
+      suggestedReps: exercise.suggestedReps,
+      suggestedSets: String(exercise.suggestedSets),
+    });
+
+    fetch(`/api/progression?${params}`)
+      .then((r) => r.json())
+      .then((data: ProgressionResult) => {
+        // Don't show anything if there's no data yet
+        if (data.action !== ACTION_NO_DATA) setSuggestion(data);
+      })
+      .catch(() => {/* offline — skip silently */});
+  }, [exercise.id, exercise.name, exercise.type, exercise.suggestedReps, exercise.suggestedSets]);
 
   const addSet = () => {
     onSetsChange([...sets, {
@@ -41,14 +146,7 @@ export default function ExerciseCard({ exercise, sets, onSetsChange }: ExerciseC
   const removeSet = (i: number) =>
     onSetsChange(sets.filter((_, j) => j !== i).map((s, j) => ({ ...s, setNumber: j + 1 })));
 
-  const effectiveType = isBackExtension
-    ? mode === "hold" ? "timed" : mode === "weighted" ? "weighted" : "bodyweight"
-    : exercise.type;
-
-  const hasNotes = isFrontRackCarry || !!exercise.notes;
-
   return (
-    // Pure white card — no color here, color lives in the parent panel
     <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-white/80">
 
       {/* Header */}
@@ -99,6 +197,11 @@ export default function ExerciseCard({ exercise, sets, onSetsChange }: ExerciseC
             ))}
           </div>
         )}
+
+        {/* Progression suggestion */}
+        {suggestion && (
+          <SuggestionBanner result={suggestion} />
+        )}
       </div>
 
       {/* Sets */}
@@ -129,6 +232,63 @@ export default function ExerciseCard({ exercise, sets, onSetsChange }: ExerciseC
           Add Set
         </button>
       </div>
+    </div>
+  );
+}
+
+// ── Suggestion banner ─────────────────────────────────────────────────────────
+
+function SuggestionBanner({ result }: { result: ProgressionResult }) {
+  const style   = getSuggestionStyle(result.action);
+  const summary = getSuggestionSummary(result);
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className={`mt-4 rounded-xl border ${style.bg} ${style.border} overflow-hidden`}>
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full px-4 py-2.5 flex items-center gap-2 text-left"
+      >
+        <span className={`text-sm font-bold ${style.text} leading-none`}>{style.icon}</span>
+        <span className={`text-xs font-semibold ${style.text} flex-1`}>{summary}</span>
+        {/* Suggested weights inline */}
+        {result.suggestedSets.length > 0 && !expanded && (
+          <span className={`text-xs ${style.text} opacity-60 font-mono`}>
+            {result.suggestedSets.map((s) => `${s.weight}`).join(" / ")}
+          </span>
+        )}
+        <span className={`text-xs ${style.text} opacity-40 ml-1`}>{expanded ? "▲" : "▼"}</span>
+      </button>
+
+      {expanded && (
+        <div className={`px-4 pb-3 border-t ${style.border}`}>
+          {/* Set-by-set breakdown */}
+          {result.suggestedSets.length > 0 && (
+            <div className="mt-2.5 space-y-1">
+              {result.suggestedSets.map((s) => {
+                const isUp = s.note.includes("↑") || s.note.includes("+2.5") || s.note.includes("ramp");
+                return (
+                  <div key={s.setNumber} className="flex items-center gap-2">
+                    <span className={`text-xs ${style.text} opacity-50 w-10`}>Set {s.setNumber}</span>
+                    <span className={`text-xs font-semibold ${style.text}`}>
+                      {s.weight}kg × {s.targetReps}
+                    </span>
+                    {isUp && (
+                      <span className={`text-xs ${style.text} opacity-70`}>↑</span>
+                    )}
+                    <span className={`text-xs ${style.text} opacity-40 ml-auto`}>{s.note}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Confidence */}
+          <p className={`text-xs ${style.text} opacity-40 mt-2`}>
+            Confidence: {result.confidence}
+          </p>
+        </div>
+      )}
     </div>
   );
 }

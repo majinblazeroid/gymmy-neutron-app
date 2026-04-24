@@ -1,85 +1,82 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/db";
-import { computeProgression } from "@/lib/progression";
+import { computeProgression, PSession, PSet } from "@/lib/progressionV2";
 
+/**
+ * GET /api/progression?exerciseId=X&exerciseType=weighted&suggestedReps=6-8&suggestedSets=3
+ *
+ * Fetches all logged sets for the given exercise (joined with session metadata),
+ * groups them by session, sorts chronologically, and runs the v2 progression algorithm.
+ */
 export async function GET(req: NextRequest) {
-  const day = req.nextUrl.searchParams.get("day");
-  if (!day) return NextResponse.json([]);
+  const params        = req.nextUrl.searchParams;
+  const exerciseId    = params.get("exerciseId");
+  const exerciseName  = params.get("exerciseName") ?? "Exercise";
+  const exerciseType  = params.get("exerciseType") ?? "weighted";
+  const suggestedReps = params.get("suggestedReps") ?? "8-10";
+  const suggestedSets = parseInt(params.get("suggestedSets") ?? "3");
 
-  // Get last 4 sessions for this day with their sets
-  const { data: sessions } = await supabase
-    .from("workout_sessions")
-    .select("*, workout_sets(*)")
-    .eq("day", day)
-    .order("date", { ascending: false })
-    .limit(4);
+  if (!exerciseId) {
+    return NextResponse.json({ error: "exerciseId is required" }, { status: 400 });
+  }
 
-  if (!sessions || sessions.length < 2) return NextResponse.json([]);
+  // Fetch every set for this exercise, joined with its parent session's metadata
+  const { data, error } = await supabase
+    .from("workout_sets")
+    .select(
+      "set_number, weight, reps, is_warmup, session_id, workout_sessions(date, pre_feeling, post_feeling)"
+    )
+    .eq("exercise_id", exerciseId)
+    .order("set_number", { ascending: true });
 
-  // Get exercises for this day
-  const { data: templates } = await supabase
-    .from("workout_templates")
-    .select("*, exercise:exercises(*)")
-    .eq("day", day)
-    .order("order");
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
-  if (!templates) return NextResponse.json([]);
+  // Group rows by session_id, building PSession[]
+  const sessionMap = new Map<string, PSession>();
 
-  const suggestions = templates
-    .map((t: { exercise: { id: string; name: string; type: string; suggested_reps: string } }) => {
-      const exercise = t.exercise;
-      if (!exercise) return null;
+  for (const row of data ?? []) {
+    const sess = row.workout_sessions as unknown as {
+      date: string;
+      pre_feeling: number;
+      post_feeling: number;
+    } | null;
+    if (!sess || !row.session_id) continue;
 
-      const recentSessions = sessions.map((s: {
-        id: string;
-        date: string;
-        day: string;
-        pre_feeling: number;
-        post_feeling: number;
-        warmup_completed: boolean;
-        workout_sets: Array<{
-          id: string;
-          exercise_id: string;
-          set_number: number;
-          weight: number | null;
-          unit: string | null;
-          reps: number | null;
-          duration_seconds: number | null;
-          is_warmup: boolean;
-          side: string | null;
-          note: string | null;
-        }>;
-      }) => ({
-        id: s.id,
-        date: s.date,
-        day: s.day as "A" | "B",
-        preFeeling: s.pre_feeling,
-        postFeeling: s.post_feeling,
-        warmupCompleted: s.warmup_completed,
-        sets: (s.workout_sets ?? []).map((ws) => ({
-          id: ws.id,
-          sessionId: s.id,
-          exerciseId: ws.exercise_id,
-          setNumber: ws.set_number,
-          weight: ws.weight ?? undefined,
-          unit: (ws.unit ?? undefined) as "kg" | "lbs" | undefined,
-          reps: ws.reps ?? undefined,
-          durationSeconds: ws.duration_seconds ?? undefined,
-          isWarmup: ws.is_warmup,
-          side: (ws.side ?? undefined) as "left" | "right" | undefined,
-          note: ws.note ?? undefined,
-        })),
-      }));
+    if (!sessionMap.has(row.session_id)) {
+      sessionMap.set(row.session_id, {
+        date:        sess.date,
+        preFeeling:  sess.pre_feeling  ?? 3,
+        postFeeling: sess.post_feeling ?? 3,
+        sets:        [],
+      });
+    }
 
-      return computeProgression(
-        exercise.id,
-        exercise.name,
-        exercise.type,
-        exercise.suggested_reps,
-        recentSessions
-      );
-    })
-    .filter(Boolean);
+    const pSet: PSet = {
+      setNumber: row.set_number ?? 1,
+      weight:    row.weight    ?? 0,
+      reps:      row.reps      ?? 0,
+      isWarmup:  row.is_warmup ?? false,
+    };
 
-  return NextResponse.json(suggestions);
+    sessionMap.get(row.session_id)!.sets.push(pSet);
+  }
+
+  // Sort sessions chronologically (oldest → newest) — required by the algorithm
+  const sessions: PSession[] = Array.from(sessionMap.values()).sort((a, b) =>
+    a.date.localeCompare(b.date)
+  );
+
+  const today = new Date().toISOString().split("T")[0];
+  const result = computeProgression(
+    exerciseName,
+    exerciseType,
+    suggestedReps,
+    suggestedSets,
+    sessions,
+    today,
+  );
+
+  return NextResponse.json(result);
 }
