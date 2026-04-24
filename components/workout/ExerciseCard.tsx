@@ -130,6 +130,11 @@ export default function ExerciseCard({ exercise, sets, onSetsChange }: ExerciseC
       .catch(() => {/* offline — skip silently */});
   }, [exercise.id, exercise.name, exercise.type, exercise.suggestedReps, exercise.suggestedSets]);
 
+  const handleUnitChange = (newUnit: WeightUnit) => {
+    setUnit(newUnit);
+    onSetsChange(sets.map((s) => ({ ...s, unit: newUnit })));
+  };
+
   const addSet = () => {
     onSetsChange([...sets, {
       exerciseId: exercise.id,
@@ -214,7 +219,7 @@ export default function ExerciseCard({ exercise, sets, onSetsChange }: ExerciseC
               index={i}
               exerciseType={effectiveType as Exercise["type"]}
               unit={unit}
-              onUnitChange={setUnit}
+              onUnitChange={handleUnitChange}
               onChange={(updated) => updateSet(i, updated)}
               onRemove={() => removeSet(i)}
             />

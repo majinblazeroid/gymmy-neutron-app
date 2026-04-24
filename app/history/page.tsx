@@ -21,7 +21,7 @@ interface ExerciseStat {
 }
 
 function buildExerciseStat(sessions: WorkoutSession[], exerciseId: string): ExerciseStat | null {
-  const points: { value: number; isBodyweight: boolean }[] = [];
+  const points: { value: number; isBodyweight: boolean; unit: string }[] = [];
 
   for (const s of [...sessions].sort((a, b) => a.date.localeCompare(b.date))) {
     const ws = (s.sets ?? []).filter((w) => w.exerciseId === exerciseId && !w.isWarmup);
@@ -30,25 +30,26 @@ function buildExerciseStat(sessions: WorkoutSession[], exerciseId: string): Exer
     const hasWeight = ws.some((w) => (w.weight ?? 0) > 0);
     if (hasWeight) {
       const avg = ws.reduce((a, w) => a + (w.weight ?? 0), 0) / ws.length;
-      points.push({ value: Math.round(avg * 10) / 10, isBodyweight: false });
+      const unit = ws.find((w) => w.unit)?.unit ?? "kg";
+      points.push({ value: Math.round(avg * 10) / 10, isBodyweight: false, unit });
     } else {
       const setsWithReps = ws.filter((w) => (w.reps ?? 0) > 0);
       if (!setsWithReps.length) continue;
       const avg = setsWithReps.reduce((a, w) => a + (w.reps ?? 0), 0) / setsWithReps.length;
-      points.push({ value: Math.round(avg * 10) / 10, isBodyweight: true });
+      points.push({ value: Math.round(avg * 10) / 10, isBodyweight: true, unit: "reps" });
     }
   }
 
   if (!points.length) return null;
 
-  const isBodyweight = points[points.length - 1].isBodyweight;
+  const last = points[points.length - 1];
   return {
     name: "",
-    isBodyweight,
-    current:  points[points.length - 1].value,
+    isBodyweight: last.isBodyweight,
+    current:  last.value,
     previous: points.length >= 2 ? points[points.length - 2].value : null,
     oldest:   points.length >= 2 ? points[0].value : null,
-    unit:     isBodyweight ? "reps" : "kg",
+    unit:     last.unit,
   };
 }
 
