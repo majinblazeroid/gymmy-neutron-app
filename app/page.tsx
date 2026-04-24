@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import useSWR from "swr";
 import Link from "next/link";
 import { Dumbbell, Shield, CheckCircle, ChevronRight } from "lucide-react";
+
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 interface WeekStatus {
   dayA: { done: boolean; date?: string };
@@ -14,23 +16,8 @@ interface WeekStatus {
 const CARD_BG  = "rgba(252, 245, 199, 0.55)";  // lemon-chiffon
 
 export default function Dashboard() {
-  const [weekStatus, setWeekStatus] = useState<WeekStatus>({
-    dayA: { done: false },
-    dayB: { done: false },
-    bjjCount: 0,
-  });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchWeek() {
-      try {
-        const res = await fetch("/api/workouts/week");
-        if (res.ok) setWeekStatus(await res.json());
-      } catch { /* offline */ }
-      finally { setLoading(false); }
-    }
-    fetchWeek();
-  }, []);
+  const { data, isLoading: loading } = useSWR<WeekStatus>("/api/workouts/week", fetcher);
+  const weekStatus = data ?? { dayA: { done: false }, dayB: { done: false }, bjjCount: 0 };
 
   const today = new Date().toLocaleDateString("en-AU", {
     weekday: "long", month: "long", day: "numeric",

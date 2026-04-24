@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import useSWR from "swr";
 import { WorkoutSession, BJJSession } from "@/lib/types";
+
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 import { Dumbbell, Shield, ChevronDown, ChevronUp, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 type SessionEntry =
@@ -106,29 +109,19 @@ function ExerciseStatCard({ stat, name }: { stat: ExerciseStat; name: string }) 
 }
 
 export default function HistoryPage() {
-  const [sessions,    setSessions]    = useState<SessionEntry[]>([]);
-  const [gymSessions, setGymSessions] = useState<WorkoutSession[]>([]);
-  const [filter,      setFilter]      = useState<Filter>("all");
-  const [view,        setView]        = useState<View>("log");
-  const [expanded,    setExpanded]    = useState<string | null>(null);
-  const [loading,     setLoading]     = useState(true);
+  const [filter,   setFilter]   = useState<Filter>("all");
+  const [view,     setView]     = useState<View>("log");
+  const [expanded, setExpanded] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const [gymRes, bjjRes] = await Promise.all([fetch("/api/workouts"), fetch("/api/bjj")]);
-        const gym: WorkoutSession[] = gymRes.ok ? await gymRes.json() : [];
-        const bjj: BJJSession[]     = bjjRes.ok ? await bjjRes.json() : [];
-        setGymSessions(gym);
-        setSessions([
-          ...gym.map((d) => ({ type: "gym" as const, data: d })),
-          ...bjj.map((d) => ({ type: "bjj" as const, data: d })),
-        ].sort((a, b) => b.data.date.localeCompare(a.data.date)));
-      } catch { /* offline */ }
-      finally { setLoading(false); }
-    }
-    load();
-  }, []);
+  const { data: gym,  isLoading: gymLoading  } = useSWR<WorkoutSession[]>("/api/workouts", fetcher);
+  const { data: bjj,  isLoading: bjjLoading  } = useSWR<BJJSession[]>("/api/bjj", fetcher);
+
+  const loading     = gymLoading || bjjLoading;
+  const gymSessions = gym ?? [];
+  const sessions: SessionEntry[] = [
+    ...(gym ?? []).map((d) => ({ type: "gym" as const, data: d })),
+    ...(bjj ?? []).map((d) => ({ type: "bjj" as const, data: d })),
+  ].sort((a, b) => b.data.date.localeCompare(a.data.date));
 
   const filtered = sessions.filter((s) => filter === "all" || s.type === filter);
 
