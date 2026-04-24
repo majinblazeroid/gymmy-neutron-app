@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import useSWR from "swr";
 import { WorkoutSession, BJJSession } from "@/lib/types";
-
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
 import { Dumbbell, Shield, ChevronDown, ChevronUp, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 type SessionEntry =
   | { type: "gym"; data: WorkoutSession }
   | { type: "bjj"; data: BJJSession };
@@ -113,8 +113,23 @@ export default function HistoryPage() {
   const [view,     setView]     = useState<View>("log");
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  const { data: gym,  isLoading: gymLoading  } = useSWR<WorkoutSession[]>("/api/workouts", fetcher);
-  const { data: bjj,  isLoading: bjjLoading  } = useSWR<BJJSession[]>("/api/bjj", fetcher);
+  const { data: gym, isLoading: gymLoading, mutate: mutateGym } = useSWR<WorkoutSession[]>("/api/workouts", fetcher);
+  const { data: bjj, isLoading: bjjLoading, mutate: mutateBJJ } = useSWR<BJJSession[]>("/api/bjj", fetcher);
+
+  useEffect(() => {
+    let startY = 0;
+    const onStart = (e: TouchEvent) => { startY = e.touches[0].clientY; };
+    const onEnd   = (e: TouchEvent) => {
+      const delta = e.changedTouches[0].clientY - startY;
+      if (delta > 60 && window.scrollY === 0) { mutateGym(); mutateBJJ(); }
+    };
+    document.addEventListener("touchstart", onStart, { passive: true });
+    document.addEventListener("touchend",   onEnd,   { passive: true });
+    return () => {
+      document.removeEventListener("touchstart", onStart);
+      document.removeEventListener("touchend",   onEnd);
+    };
+  }, [mutateGym, mutateBJJ]);
 
   const loading     = gymLoading || bjjLoading;
   const gymSessions = gym ?? [];

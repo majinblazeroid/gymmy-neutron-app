@@ -12,7 +12,7 @@ export default withPWA({
   workboxOptions: {
     runtimeCaching: [
       {
-        urlPattern: ({ url }: { url: URL }) => url.pathname.startsWith("/api/"),
+        urlPattern: ({ url }: { url: URL; request: Request; event?: Event }) => url.pathname.startsWith("/api/"),
         handler: "NetworkOnly",
       },
     ],

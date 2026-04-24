@@ -16,7 +16,7 @@ interface WeekStatus {
 const CARD_BG  = "rgba(252, 245, 199, 0.55)";  // lemon-chiffon
 
 export default function Dashboard() {
-  const { data, isLoading: loading } = useSWR<WeekStatus>("/api/workouts/week", fetcher);
+  const { data } = useSWR<WeekStatus>("/api/workouts/week", fetcher);
   const weekStatus = data ?? { dayA: { done: false }, dayB: { done: false }, bjjCount: 0 };
 
   const today = new Date().toLocaleDateString("en-AU", {
@@ -36,13 +36,11 @@ export default function Dashboard() {
       </div>
 
       {/* Stats row — always white, no tint */}
-      {!loading && (
-        <div className="grid grid-cols-3 gap-3">
-          <StatChip label="Gym"   value={gymDone} max={2} />
-          <StatChip label="BJJ"   value={weekStatus.bjjCount} />
-          <StatChip label="Total" value={total} />
-        </div>
-      )}
+      <div className="grid grid-cols-3 gap-3">
+        <StatChip label="Gym"   value={gymDone} max={2} />
+        <StatChip label="BJJ"   value={weekStatus.bjjCount} />
+        <StatChip label="Total" value={total} />
+      </div>
 
       {/* One unified action card — no dividers, all three equally spaced */}
       <div className="rounded-3xl p-5 border border-[#f0e8a0]/60" style={{ background: CARD_BG }}>
