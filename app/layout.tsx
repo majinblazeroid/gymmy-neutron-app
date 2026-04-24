@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   description: "Track gym workouts and BJJ sessions",
   manifest: "/manifest.json",
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Gymmy Neutron" },
+  icons: { apple: "/apple-touch-icon.png" },
 };
 
 export const viewport: Viewport = {
