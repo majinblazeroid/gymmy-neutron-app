@@ -30,7 +30,10 @@ function WorkoutContent() {
   const [step, setStep] = useState<Step>(() => {
     try {
       const raw = localStorage.getItem(DRAFT_KEY);
-      if (raw) return (JSON.parse(raw).step as Step) ?? "pre";
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.session?.day === defaultDay) return (parsed.step as Step) ?? "pre";
+      }
     } catch {}
     return "pre";
   });
@@ -42,7 +45,7 @@ function WorkoutContent() {
       const raw = localStorage.getItem(DRAFT_KEY);
       if (raw) {
         const { session: s } = JSON.parse(raw);
-        if (s) return s;
+        if (s && s.day === defaultDay) return s;
       }
     } catch {}
     return {
