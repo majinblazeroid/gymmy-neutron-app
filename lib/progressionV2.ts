@@ -40,6 +40,7 @@ export interface ProgressionResult {
   suggestedSets: SuggestedSet[];
   proof: string[];
   confidence: "high" | "medium" | "low";
+  unit?: string;
 }
 
 // ── Action constants ──────────────────────────────────────────────────────────

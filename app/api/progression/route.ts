@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
   const { data, error } = await supabase
     .from("workout_sets")
     .select(
-      "set_number, weight, reps, is_warmup, session_id, workout_sessions(date, pre_feeling, post_feeling)"
+      "set_number, weight, unit, reps, is_warmup, session_id, workout_sessions(date, pre_feeling, post_feeling)"
     )
     .eq("exercise_id", exerciseId)
     .order("set_number", { ascending: true });
@@ -36,6 +36,7 @@ export async function GET(req: NextRequest) {
 
   // Group rows by session_id, building PSession[]
   const sessionMap = new Map<string, PSession>();
+  let detectedUnit = "kg";
 
   for (const row of data ?? []) {
     const sess = row.workout_sessions as unknown as {
@@ -60,6 +61,7 @@ export async function GET(req: NextRequest) {
       reps:      row.reps      ?? 0,
       isWarmup:  row.is_warmup ?? false,
     };
+    if ((row as { unit?: string }).unit) detectedUnit = (row as { unit?: string }).unit!;
 
     sessionMap.get(row.session_id)!.sets.push(pSet);
   }
@@ -79,5 +81,5 @@ export async function GET(req: NextRequest) {
     today,
   );
 
-  return NextResponse.json(result);
+  return NextResponse.json({ ...result, unit: detectedUnit });
 }

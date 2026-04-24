@@ -63,23 +63,24 @@ function getSuggestionStyle(action: string): SuggestionStyle {
 
 function getSuggestionSummary(result: ProgressionResult): string {
   const { action, suggestedSets } = result;
+  const u = result.unit ?? "kg";
 
   if (action === ACTION_INCREASE_WAVE) {
     const bumped = suggestedSets.find((s) => s.note.includes("↑"));
-    if (bumped) return `Bump set ${bumped.setNumber} → ${bumped.weight}kg`;
+    if (bumped) return `Bump set ${bumped.setNumber} → ${bumped.weight}${u}`;
     return "Increase";
   }
   if (action === ACTION_HOLD) {
     const tw = suggestedSets.length > 0 ? Math.max(...suggestedSets.map((s) => s.weight)) : null;
-    return tw ? `Hold at ${tw}kg` : "Hold";
+    return tw ? `Hold at ${tw}${u}` : "Hold";
   }
   if (action === ACTION_DELOAD_SMART) {
     const feeder = suggestedSets[0];
-    return feeder ? `Smart deload — feeder sets at ${feeder.weight}kg` : "Smart deload";
+    return feeder ? `Smart deload — feeder sets at ${feeder.weight}${u}` : "Smart deload";
   }
   if (action === ACTION_DELOAD_FULL) {
     const w = suggestedSets[0]?.weight;
-    return w != null ? `Full deload → ${w}kg` : "Full deload";
+    return w != null ? `Full deload → ${w}${u}` : "Full deload";
   }
   if (action === ACTION_BAD_DAY_RECOVERY) {
     return "Recovery — match last good session";
@@ -276,7 +277,7 @@ function SuggestionBanner({ result }: { result: ProgressionResult }) {
                   <div key={s.setNumber} className="flex items-center gap-2">
                     <span className={`text-xs ${style.text} opacity-50 w-10`}>Set {s.setNumber}</span>
                     <span className={`text-xs font-semibold ${style.text}`}>
-                      {s.weight}kg × {s.targetReps}
+                      {s.weight}{result.unit ?? "kg"} × {s.targetReps}
                     </span>
                     {isUp && (
                       <span className={`text-xs ${style.text} opacity-70`}>↑</span>
