@@ -6,16 +6,18 @@ import { WorkoutDay } from "@/lib/types";
 
 interface PreWorkoutProps {
   day: WorkoutDay;
+  date: string;
   feeling: number;
   notes: string;
   onChange: (day: WorkoutDay, feeling: number, notes: string) => void;
+  onDateChange: (date: string) => void;
   onStart: () => void;
 }
 
 // Celadon — gym panel
 const PANEL_BG = "rgba(173, 247, 182, 0.20)";
 
-export default function PreWorkout({ day, feeling, notes, onChange, onStart }: PreWorkoutProps) {
+export default function PreWorkout({ day, date, feeling, notes, onChange, onDateChange, onStart }: PreWorkoutProps) {
   return (
     <div className="pt-8 pb-6 space-y-8">
 
@@ -49,6 +51,18 @@ export default function PreWorkout({ day, feeling, notes, onChange, onStart }: P
               </button>
             );
           })}
+        </div>
+
+        <div className="space-y-2 pt-1">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Date</p>
+          <div className="w-full overflow-hidden rounded-2xl bg-white border border-white/80 shadow-sm">
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => onDateChange(e.target.value)}
+              className="w-full min-w-0 px-5 py-4 text-[#495057] text-sm bg-transparent focus:outline-none"
+            />
+          </div>
         </div>
       </section>
 

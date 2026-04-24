@@ -136,9 +136,11 @@ function WorkoutContent() {
     return (
       <PreWorkout
         day={session.day}
+        date={session.date}
         feeling={session.preFeeling}
         notes={session.preNotes}
         onChange={(d, f, n) => setSession(s => ({ ...s, day: d, preFeeling: f, preNotes: n }))}
+        onDateChange={(date) => setSession(s => ({ ...s, date }))}
         onStart={() => setStep("warmup")}
       />
     );

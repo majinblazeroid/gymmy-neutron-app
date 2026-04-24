@@ -4,11 +4,6 @@ import { useEffect, useState } from "react";
 import { WorkoutSession, BJJSession } from "@/lib/types";
 import { Dumbbell, Shield, ChevronDown, ChevronUp, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Legend,
-} from "recharts";
-
 type SessionEntry =
   | { type: "gym"; data: WorkoutSession }
   | { type: "bjj"; data: BJJSession };
@@ -16,52 +11,95 @@ type SessionEntry =
 type Filter = "all" | "gym" | "bjj";
 type View   = "log" | "charts";
 
-interface ChartPoint { date: string; weight: number; reps: number; volume: number }
+interface ExerciseStat {
+  name: string;
+  isBodyweight: boolean;
+  current: number;       // most recent session avg
+  previous: number | null;  // second most recent
+  oldest: number | null;    // oldest session avg
+  unit: string;
+}
 
-function buildChartData(sessions: WorkoutSession[], exerciseId: string): ChartPoint[] {
-  const points: ChartPoint[] = [];
+function buildExerciseStat(sessions: WorkoutSession[], exerciseId: string): ExerciseStat | null {
+  const points: { value: number; isBodyweight: boolean }[] = [];
+
   for (const s of [...sessions].sort((a, b) => a.date.localeCompare(b.date))) {
     const ws = (s.sets ?? []).filter((w) => w.exerciseId === exerciseId && !w.isWarmup);
     if (!ws.length) continue;
-    const topWeight   = Math.max(...ws.map((w) => w.weight ?? 0));
-    const totalReps   = ws.reduce((a, w) => a + (w.reps ?? 0), 0);
-    const totalDur    = ws.reduce((a, w) => a + (w.durationSeconds ?? 0), 0);
-    const volume      = ws.reduce((a, w) => a + (w.weight ?? 0) * (w.reps ?? 0), 0);
-    points.push({ date: s.date.slice(5), weight: topWeight, reps: totalDur > 0 ? totalDur : totalReps, volume });
+
+    const hasWeight = ws.some((w) => (w.weight ?? 0) > 0);
+    if (hasWeight) {
+      const avg = ws.reduce((a, w) => a + (w.weight ?? 0), 0) / ws.length;
+      points.push({ value: Math.round(avg * 10) / 10, isBodyweight: false });
+    } else {
+      const setsWithReps = ws.filter((w) => (w.reps ?? 0) > 0);
+      if (!setsWithReps.length) continue;
+      const avg = setsWithReps.reduce((a, w) => a + (w.reps ?? 0), 0) / setsWithReps.length;
+      points.push({ value: Math.round(avg * 10) / 10, isBodyweight: true });
+    }
   }
-  return points;
+
+  if (!points.length) return null;
+
+  const isBodyweight = points[points.length - 1].isBodyweight;
+  return {
+    name: "",
+    isBodyweight,
+    current:  points[points.length - 1].value,
+    previous: points.length >= 2 ? points[points.length - 2].value : null,
+    oldest:   points.length >= 2 ? points[0].value : null,
+    unit:     isBodyweight ? "reps" : "kg",
+  };
 }
 
-function ExerciseChart({ name, data, isMint }: { name: string; data: ChartPoint[]; isMint: boolean }) {
-  const color = isMint ? "#2d8a5e" : "#b55e2a";
-  const hasWeight = data.some((d) => d.weight > 0);
-  const hasReps   = data.some((d) => d.reps   > 0);
-  if (data.length < 2) return null;
-
+function Delta({ current, compare, label }: { current: number; compare: number; label: string }) {
+  const diff = Math.round((current - compare) * 10) / 10;
+  if (diff === 0) {
+    return (
+      <div className="flex flex-col items-center gap-0.5">
+        <span className="text-xs text-gray-400 font-medium">— {label}</span>
+      </div>
+    );
+  }
+  const up = diff > 0;
   return (
-    <div className="bg-white rounded-2xl p-4 shadow-sm border border-white/80">
-      <h3 className="text-[#495057] font-semibold text-sm mb-4">{name}</h3>
-      <ResponsiveContainer width="100%" height={180}>
-        <LineChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: -20 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-          <XAxis dataKey="date" tick={{ fill: "#9ca3af", fontSize: 10 }} />
-          <YAxis tick={{ fill: "#9ca3af", fontSize: 10 }} />
-          <Tooltip
-            contentStyle={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12 }}
-            labelStyle={{ color: "#6b7280" }}
-            itemStyle={{ color: "#495057" }}
-          />
-          <Legend wrapperStyle={{ fontSize: 11, color: "#9ca3af" }} />
-          {hasWeight && (
-            <Line type="monotone" dataKey="weight" stroke={color} strokeWidth={2}
-              dot={{ r: 3, fill: color }} name="Top weight" connectNulls />
-          )}
-          {hasReps && !hasWeight && (
-            <Line type="monotone" dataKey="reps" stroke={color} strokeWidth={2}
-              dot={{ r: 3, fill: color }} name="Reps / duration (s)" connectNulls />
-          )}
-        </LineChart>
-      </ResponsiveContainer>
+    <div className={`flex flex-col items-center gap-0.5`}>
+      <span className={`text-sm font-bold ${up ? "text-green-500" : "text-red-400"}`}>
+        {up ? "↑" : "↓"} {Math.abs(diff)}
+      </span>
+      <span className="text-xs text-gray-400">{label}</span>
+    </div>
+  );
+}
+
+function ExerciseStatCard({ stat, name }: { stat: ExerciseStat; name: string }) {
+  return (
+    <div className="bg-white rounded-2xl px-5 py-4 shadow-sm border border-white/80">
+      <div className="flex items-center justify-between">
+        {/* Left: name + current value */}
+        <div>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{name}</p>
+          <p className="text-2xl font-bold text-[#495057] leading-none">
+            {stat.current}
+            <span className="text-sm font-medium text-gray-400 ml-1">{stat.unit}</span>
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            {stat.isBodyweight ? "avg reps / set" : "avg working weight"}
+          </p>
+        </div>
+
+        {/* Right: deltas */}
+        {(stat.previous !== null || stat.oldest !== null) && (
+          <div className="flex gap-5">
+            {stat.previous !== null && (
+              <Delta current={stat.current} compare={stat.previous} label="vs last" />
+            )}
+            {stat.oldest !== null && stat.oldest !== stat.previous && (
+              <Delta current={stat.current} compare={stat.oldest} label="vs first" />
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -127,14 +165,17 @@ export default function HistoryPage() {
             </div>
           )}
           {!loading && gymSessions.length > 0 && (() => {
-            const ids = [...new Set((gymSessions.flatMap((s) => s.sets ?? [])).map((w) => w.exerciseId))];
+            const allSets = gymSessions.flatMap((s) => s.sets ?? []).filter((w) => !w.isWarmup);
+            const ids = [...new Set(allSets.map((w) => w.exerciseId))];
             return (
-              /* Mint panel wrapping all gym charts */
-              <section className="rounded-3xl p-5 space-y-4" style={{ background: "rgba(173, 247, 182, 0.20)" }}>
+              <section className="rounded-3xl p-5 space-y-3" style={{ background: "rgba(173, 247, 182, 0.20)" }}>
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Gym progress</p>
-                {ids.map((id, idx) => (
-                  <ExerciseChart key={id} name={id} data={buildChartData(gymSessions, id)} isMint={idx % 2 === 0} />
-                ))}
+                {ids.map((id) => {
+                  const name = allSets.find((w) => w.exerciseId === id)?.exerciseName ?? id;
+                  const stat = buildExerciseStat(gymSessions, id);
+                  if (!stat) return null;
+                  return <ExerciseStatCard key={id} stat={stat} name={name} />;
+                })}
               </section>
             );
           })()}
