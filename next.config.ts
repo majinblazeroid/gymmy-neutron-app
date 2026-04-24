@@ -9,4 +9,12 @@ export default withPWA({
   dest: "public",
   cacheOnFrontEndNav: true,
   reloadOnOnline: true,
+  workboxOptions: {
+    runtimeCaching: [
+      {
+        urlPattern: /^\/api\//,
+        handler: "NetworkOnly",
+      },
+    ],
+  },
 })(nextConfig);
