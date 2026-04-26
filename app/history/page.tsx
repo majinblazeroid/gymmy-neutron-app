@@ -1,25 +1,44 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { WorkoutSession, BJJSession } from "@/lib/types";
-import { Dumbbell, Shield, ChevronDown, ChevronUp, TrendingUp } from "lucide-react";
+import { Dumbbell, Shield, ChevronDown, ChevronUp, TrendingUp, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  formatDistance,
+  formatDuration,
+  formatPace,
+  paceLabel,
+} from "@/lib/runUtils";
+import { useRunUnit } from "@/lib/useRunUnit";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
+
+interface RunSession {
+  id: string;
+  date: string;
+  duration_seconds: number | null;
+  distance_meters: number | null;
+  avg_pace_sec_per_km: number | null;
+  elevation_gain_meters: number | null;
+  notes: string | null;
+}
+
 type SessionEntry =
   | { type: "gym"; data: WorkoutSession }
   | { type: "bjj"; data: BJJSession };
 
-type Filter = "all" | "gym" | "bjj";
+type Filter = "all" | "gym" | "bjj" | "run";
 type View   = "log" | "charts";
 
 interface ExerciseStat {
   name: string;
   isBodyweight: boolean;
-  current: number;       // most recent session avg
-  previous: number | null;  // second most recent
-  oldest: number | null;    // oldest session avg
+  current: number;
+  previous: number | null;
+  oldest: number | null;
   unit: string;
 }
 
@@ -67,7 +86,7 @@ function Delta({ current, compare, label }: { current: number; compare: number; 
   }
   const up = diff > 0;
   return (
-    <div className={`flex flex-col items-center gap-0.5`}>
+    <div className="flex flex-col items-center gap-0.5">
       <span className={`text-sm font-bold ${up ? "text-green-500" : "text-red-400"}`}>
         {up ? "↑" : "↓"} {Math.abs(diff)}
       </span>
@@ -80,7 +99,6 @@ function ExerciseStatCard({ stat, name }: { stat: ExerciseStat; name: string }) 
   return (
     <div className="bg-white rounded-2xl px-5 py-4 shadow-sm border border-white/80">
       <div className="flex items-center justify-between">
-        {/* Left: name + current value */}
         <div>
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{name}</p>
           <p className="text-2xl font-bold text-[#495057] leading-none">
@@ -91,8 +109,6 @@ function ExerciseStatCard({ stat, name }: { stat: ExerciseStat; name: string }) 
             {stat.isBodyweight ? "avg reps / set" : "avg working weight"}
           </p>
         </div>
-
-        {/* Right: deltas */}
         {(stat.previous !== null || stat.oldest !== null) && (
           <div className="flex gap-5">
             {stat.previous !== null && (
@@ -112,16 +128,19 @@ export default function HistoryPage() {
   const [filter,   setFilter]   = useState<Filter>("all");
   const [view,     setView]     = useState<View>("log");
   const [expanded, setExpanded] = useState<string | null>(null);
+  const { unit } = useRunUnit();
+  const router = useRouter();
 
-  const { data: gym, isLoading: gymLoading, mutate: mutateGym } = useSWR<WorkoutSession[]>("/api/workouts", fetcher);
-  const { data: bjj, isLoading: bjjLoading, mutate: mutateBJJ } = useSWR<BJJSession[]>("/api/bjj", fetcher);
+  const { data: gym, isLoading: gymLoading, mutate: mutateGym }     = useSWR<WorkoutSession[]>("/api/workouts", fetcher);
+  const { data: bjj, isLoading: bjjLoading, mutate: mutateBJJ }     = useSWR<BJJSession[]>("/api/bjj", fetcher);
+  const { data: runs, isLoading: runsLoading, mutate: mutateRuns }  = useSWR<RunSession[]>("/api/runs", fetcher);
 
   useEffect(() => {
     let startY = 0;
     const onStart = (e: TouchEvent) => { startY = e.touches[0].clientY; };
     const onEnd   = (e: TouchEvent) => {
       const delta = e.changedTouches[0].clientY - startY;
-      if (delta > 60 && window.scrollY === 0) { mutateGym(); mutateBJJ(); }
+      if (delta > 60 && window.scrollY === 0) { mutateGym(); mutateBJJ(); mutateRuns(); }
     };
     document.addEventListener("touchstart", onStart, { passive: true });
     document.addEventListener("touchend",   onEnd,   { passive: true });
@@ -129,16 +148,28 @@ export default function HistoryPage() {
       document.removeEventListener("touchstart", onStart);
       document.removeEventListener("touchend",   onEnd);
     };
-  }, [mutateGym, mutateBJJ]);
+  }, [mutateGym, mutateBJJ, mutateRuns]);
 
-  const loading     = gymLoading || bjjLoading;
+  const loading     = gymLoading || bjjLoading || runsLoading;
   const gymSessions = gym ?? [];
+  const runSessions = runs ?? [];
+
+  const gymEntries = (gym ?? []).map((d) => ({ type: "gym" as const, data: d }));
+  const bjjEntries = (bjj ?? []).map((d) => ({ type: "bjj" as const, data: d }));
+
   const sessions: SessionEntry[] = [
-    ...(gym ?? []).map((d) => ({ type: "gym" as const, data: d })),
-    ...(bjj ?? []).map((d) => ({ type: "bjj" as const, data: d })),
+    ...gymEntries,
+    ...bjjEntries,
   ].sort((a, b) => b.data.date.localeCompare(a.data.date));
 
-  const filtered = sessions.filter((s) => filter === "all" || s.type === filter);
+  const filteredSessions = sessions.filter((s) =>
+    filter === "all" || filter === s.type
+  );
+  const filteredRuns = runSessions; // always show all runs when filter is "run"
+
+  const showGym  = (filter === "all" || filter === "gym")  && gymEntries.length > 0;
+  const showBjj  = (filter === "all" || filter === "bjj")  && bjjEntries.length > 0;
+  const showRuns = (filter === "all" || filter === "run")  && runSessions.length > 0;
 
   return (
     <div className="pt-8 pb-6 space-y-8">
@@ -195,8 +226,8 @@ export default function HistoryPage() {
       {view === "log" && (
         <>
           {/* Filter pills */}
-          <div className="flex gap-2">
-            {(["all", "gym", "bjj"] as Filter[]).map((f) => (
+          <div className="flex gap-2 flex-wrap">
+            {(["all", "gym", "bjj", "run"] as Filter[]).map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
@@ -211,42 +242,69 @@ export default function HistoryPage() {
           </div>
 
           {loading && <p className="text-gray-400 text-sm">Loading...</p>}
-          {!loading && filtered.length === 0 && (
+          {!loading && !showGym && !showBjj && !showRuns && (
             <div className="text-center py-16 text-gray-400 text-sm">No sessions yet.</div>
           )}
 
-          {/* Gym sessions in mint panel, BJJ in peach panel */}
-          {!loading && filtered.length > 0 && (() => {
-            const gymEntries = filtered.filter((e) => e.type === "gym");
-            const bjjEntries = filtered.filter((e) => e.type === "bjj");
-            const showGym = filter !== "bjj" && gymEntries.length > 0;
-            const showBjj = filter !== "gym" && bjjEntries.length > 0;
+          {!loading && (
+            <div className="space-y-6">
+              {showGym && (
+                <section className="rounded-3xl p-5 space-y-3" style={{ background: "rgba(173, 247, 182, 0.20)" }}>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Gym</p>
+                  {filteredSessions
+                    .filter((e) => e.type === "gym")
+                    .map((entry) => (
+                      <SessionCard key={entry.data.id ?? ""} entry={entry} expanded={expanded} setExpanded={setExpanded} />
+                    ))}
+                </section>
+              )}
 
-            return (
-              <div className="space-y-6">
-                {showGym && (
-                  <section className="rounded-3xl p-5 space-y-3" style={{ background: "rgba(173, 247, 182, 0.20)" }}>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Gym</p>
-                    {gymEntries.map((entry) => (
+              {showBjj && (
+                <section className="rounded-3xl p-5 space-y-3" style={{ background: "rgba(255, 192, 159, 0.22)" }}>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">BJJ</p>
+                  {filteredSessions
+                    .filter((e) => e.type === "bjj")
+                    .map((entry) => (
                       <SessionCard key={entry.data.id ?? ""} entry={entry} expanded={expanded} setExpanded={setExpanded} />
                     ))}
-                  </section>
-                )}
-                {showBjj && (
-                  <section className="rounded-3xl p-5 space-y-3" style={{ background: "rgba(255, 192, 159, 0.22)" }}>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">BJJ</p>
-                    {bjjEntries.map((entry) => (
-                      <SessionCard key={entry.data.id ?? ""} entry={entry} expanded={expanded} setExpanded={setExpanded} />
-                    ))}
-                  </section>
-                )}
-                {/* "all" with mixed entries — fall back to single list */}
-                {filter === "all" && !showGym && !showBjj && filtered.map((entry) => (
-                  <SessionCard key={entry.data.id ?? ""} entry={entry} expanded={expanded} setExpanded={setExpanded} />
-                ))}
-              </div>
-            );
-          })()}
+                </section>
+              )}
+
+              {showRuns && (
+                <section className="rounded-3xl p-5 space-y-3" style={{ background: "rgba(121, 173, 220, 0.18)" }}>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Running</p>
+                  {filteredRuns.map((run) => (
+                    <button
+                      key={run.id}
+                      onClick={() => router.push(`/run/${run.id}`)}
+                      className="w-full bg-white rounded-2xl px-5 py-4 flex items-center gap-3 shadow-sm border border-white/80 active:opacity-80 transition-opacity text-left"
+                    >
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-[#79addc]/20">
+                        <Activity size={15} style={{ color: "#3a7baa" }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[#495057] font-semibold text-sm">
+                          {run.distance_meters != null
+                            ? `${formatDistance(run.distance_meters, unit)} ${unit}`
+                            : "Run"}
+                        </p>
+                        <p className="text-gray-400 text-xs mt-0.5">
+                          {run.date}
+                          {run.duration_seconds != null
+                            ? ` · ${formatDuration(run.duration_seconds)}`
+                            : ""}
+                          {run.avg_pace_sec_per_km != null
+                            ? ` · ${formatPace(run.avg_pace_sec_per_km, unit)}${paceLabel(unit)}`
+                            : ""}
+                        </p>
+                      </div>
+                      <ChevronDown size={15} className="text-gray-300 flex-shrink-0 -rotate-90" />
+                    </button>
+                  ))}
+                </section>
+              )}
+            </div>
+          )}
         </>
       )}
     </div>
@@ -311,7 +369,6 @@ function SessionCard({ entry, expanded, setExpanded }: {
 
       {isOpen && entry.type === "gym" && (() => {
         const workingSets = ((entry.data as WorkoutSession).sets ?? []).filter((s) => !s.isWarmup);
-        // group by exercise
         const byExercise = workingSets.reduce<Record<string, typeof workingSets>>((acc, s) => {
           const key = s.exerciseName ?? s.exerciseId;
           (acc[key] ??= []).push(s);

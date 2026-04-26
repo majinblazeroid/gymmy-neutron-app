@@ -2,7 +2,9 @@
 
 import useSWR from "swr";
 import Link from "next/link";
-import { Dumbbell, Shield, CheckCircle, ChevronRight } from "lucide-react";
+import { Dumbbell, Shield, CheckCircle, ChevronRight, Activity } from "lucide-react";
+import { formatDistance, formatDuration } from "@/lib/runUtils";
+import { useRunUnit } from "@/lib/useRunUnit";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -12,12 +14,23 @@ interface WeekStatus {
   bjjCount: number;
 }
 
-// Lemon-chiffon card background — warm, neutral, holds both sections
-const CARD_BG  = "rgba(252, 245, 199, 0.55)";  // lemon-chiffon
+interface RunSession {
+  id: string;
+  date: string;
+  duration_seconds: number | null;
+  distance_meters: number | null;
+}
+
+const CARD_BG  = "rgba(252, 245, 199, 0.55)";
+const RUN_BG   = "rgba(121, 173, 220, 0.18)";
+const RUN_BORDER = "rgba(121, 173, 220, 0.40)";
 
 export default function Dashboard() {
   const { data } = useSWR<WeekStatus>("/api/workouts/week", fetcher);
+  const { data: runs } = useSWR<RunSession[]>("/api/runs", fetcher);
+  const { unit } = useRunUnit();
   const weekStatus = data ?? { dayA: { done: false }, dayB: { done: false }, bjjCount: 0 };
+  const lastRun = runs && runs.length > 0 ? runs[0] : null;
 
   const today = new Date().toLocaleDateString("en-AU", {
     weekday: "long", month: "long", day: "numeric",
@@ -69,6 +82,30 @@ export default function Dashboard() {
           </Link>
         </div>
 
+      </div>
+
+      {/* Run card */}
+      <div
+        className="rounded-3xl p-5"
+        style={{ background: RUN_BG, border: `1px solid ${RUN_BORDER}` }}
+      >
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-5">Running</p>
+        <Link href="/run">
+          <div className="bg-white rounded-2xl px-5 py-5 flex items-center justify-between shadow-sm border border-white/80 active:opacity-80 transition-opacity">
+            <div className="flex items-center gap-4">
+              <Activity size={18} className="text-gray-400 flex-shrink-0" />
+              <div>
+                <p className="font-semibold text-[#495057] text-base">Start a Run</p>
+                <p className="text-gray-400 text-xs mt-0.5">
+                  {lastRun
+                    ? `Last: ${formatDistance(lastRun.distance_meters ?? 0, unit)} ${unit}${lastRun.duration_seconds ? ` · ${formatDuration(lastRun.duration_seconds)}` : ""}`
+                    : "Track distance, pace & route"}
+                </p>
+              </div>
+            </div>
+            <ChevronRight size={16} className="text-gray-300 flex-shrink-0" />
+          </div>
+        </Link>
       </div>
     </div>
   );
