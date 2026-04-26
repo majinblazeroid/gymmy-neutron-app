@@ -246,11 +246,12 @@ export default function RunPage() {
       ? Math.floor((Date.now() - splitStartTimeRef.current) / 1000)
       : null;
 
-  const GLASS = {
-    background: "rgba(255,255,255,0.82)",
-    backdropFilter: "blur(16px)",
-    WebkitBackdropFilter: "blur(16px)",
-    border: `1px solid ${BLUE_BORDER}`,
+  const STAT_SHADOW = "0 0 10px rgba(255,255,255,0.95), 0 1px 3px rgba(0,0,0,0.12)";
+  const BTN_GLASS = {
+    background: "rgba(255,255,255,0.72)",
+    backdropFilter: "blur(12px)",
+    WebkitBackdropFilter: "blur(12px)",
+    border: "1px solid rgba(255,255,255,0.55)",
   } as React.CSSProperties;
 
   return (
@@ -310,93 +311,100 @@ export default function RunPage() {
             <RunMap points={mapPoints} currentPos={currentPos} isLive={phase === "active"} />
           </div>
 
-          {/* ── ACTIVE overlay ─────────────────────────────────────────────── */}
+          {/* ── ACTIVE: top stats HUD ──────────────────────────────────────── */}
           {phase === "active" && (
             <div
-              className="absolute bottom-0 left-0 right-0 max-w-lg mx-auto px-4 z-10"
+              className="absolute top-0 left-0 right-0 z-10 flex justify-around items-start px-6"
+              style={{ paddingTop: "calc(env(safe-area-inset-top) + 4.5rem)" }}
+            >
+              <MapStat label={`Pace ${paceLabel(unit)}`} value={avgPaceSec > 0 ? formatPace(avgPaceSec, unit) : "--:--"} shadow={STAT_SHADOW} />
+              <MapStat label="Duration" value={formatDuration(elapsedSeconds)} shadow={STAT_SHADOW} />
+              <MapStat label={unit === "mi" ? "Elev (ft)" : "Elev (m)"} value={formatElevation(elevationGain, unit)} shadow={STAT_SHADOW} />
+            </div>
+          )}
+
+          {/* ── ACTIVE: bottom controls ─────────────────────────────────────── */}
+          {phase === "active" && (
+            <div
+              className="absolute bottom-0 left-0 right-0 z-10 px-6"
               style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))" }}
             >
-              <div className="rounded-3xl p-5 space-y-4" style={GLASS}>
-                <div className="grid grid-cols-2 gap-3">
-                  <StatTile label={`Distance (${unit})`} value={formatDistance(distanceMeters, unit)} />
-                  <StatTile label="Duration" value={formatDuration(elapsedSeconds)} />
-                  <StatTile
-                    label={`Pace${paceLabel(unit)}`}
-                    value={avgPaceSec > 0 ? formatPace(avgPaceSec, unit) : "--:--"}
-                  />
-                  <StatTile
-                    label={`Elevation${unit === "mi" ? " (ft)" : " (m)"}`}
-                    value={formatElevation(elevationGain, unit)}
-                  />
-                </div>
-
-                {currentSplitElapsed !== null && (
-                  <p className="text-xs text-gray-500 text-center">
-                    {splitLabel(currentKmInProgress, unit)} · {formatDuration(currentSplitElapsed)} so far
-                  </p>
-                )}
-
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    onClick={handlePause}
-                    className="flex items-center justify-center gap-2 bg-white/80 border border-gray-200 text-[#495057] font-semibold py-3 rounded-2xl active:opacity-80 transition-opacity shadow-sm"
-                  >
-                    <Pause size={18} />
-                    Pause
-                  </button>
-                  <button
-                    onClick={handleFinish}
-                    className="flex items-center justify-center gap-2 bg-[#495057]/90 text-white font-semibold py-3 rounded-2xl active:opacity-80 transition-opacity"
-                  >
-                    <Square size={18} />
-                    Finish
-                  </button>
-                </div>
+              {currentSplitElapsed !== null && (
+                <p className="text-center text-xs font-semibold text-black/50 mb-2"
+                   style={{ textShadow: STAT_SHADOW }}>
+                  {splitLabel(currentKmInProgress, unit)} · {formatDuration(currentSplitElapsed)} so far
+                </p>
+              )}
+              <p className="text-center font-black text-black leading-none mb-4"
+                 style={{ fontSize: "3.5rem", textShadow: STAT_SHADOW }}>
+                {formatDistance(distanceMeters, unit)}
+                <span className="text-xl font-semibold text-black/40 ml-2">{unit}</span>
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={handlePause}
+                  className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-4 font-semibold text-[#495057] active:opacity-70 transition-opacity"
+                  style={BTN_GLASS}
+                >
+                  <Pause size={18} />
+                  Pause
+                </button>
+                <button
+                  onClick={handleFinish}
+                  className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-4 font-semibold text-white active:opacity-70 transition-opacity"
+                  style={{ background: "rgba(73,80,87,0.88)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}
+                >
+                  <Square size={18} />
+                  Finish
+                </button>
               </div>
             </div>
           )}
 
-          {/* ── PAUSED overlay ──────────────────────────────────────────────── */}
+          {/* ── PAUSED: top stats HUD ──────────────────────────────────────── */}
           {phase === "paused" && (
             <div
-              className="absolute bottom-0 left-0 right-0 max-w-lg mx-auto px-4 z-10"
+              className="absolute top-0 left-0 right-0 z-10 flex justify-around items-start px-6"
+              style={{ paddingTop: "calc(env(safe-area-inset-top) + 4.5rem)" }}
+            >
+              <MapStat label={`Pace ${paceLabel(unit)}`} value={avgPaceSec > 0 ? formatPace(avgPaceSec, unit) : "--:--"} shadow={STAT_SHADOW} />
+              <MapStat label="Duration" value={formatDuration(elapsedSeconds)} shadow={STAT_SHADOW} />
+              <MapStat label={unit === "mi" ? "Elev (ft)" : "Elev (m)"} value={formatElevation(elevationGain, unit)} shadow={STAT_SHADOW} />
+            </div>
+          )}
+
+          {/* ── PAUSED: bottom controls ─────────────────────────────────────── */}
+          {phase === "paused" && (
+            <div
+              className="absolute bottom-0 left-0 right-0 z-10 px-6"
               style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))" }}
             >
-              <div className="rounded-3xl p-5 space-y-4" style={GLASS}>
-                <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
-                  <span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" />
-                  Paused
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <StatTile label={`Distance (${unit})`} value={formatDistance(distanceMeters, unit)} />
-                  <StatTile label="Duration" value={formatDuration(elapsedSeconds)} />
-                  <StatTile
-                    label={`Pace${paceLabel(unit)}`}
-                    value={avgPaceSec > 0 ? formatPace(avgPaceSec, unit) : "--:--"}
-                  />
-                  <StatTile
-                    label={`Elevation${unit === "mi" ? " (ft)" : " (m)"}`}
-                    value={formatElevation(elevationGain, unit)}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    onClick={handleResume}
-                    className="flex items-center justify-center gap-2 bg-[#495057]/90 text-white font-semibold py-3 rounded-2xl active:opacity-80 transition-opacity"
-                  >
-                    <Play size={18} />
-                    Resume
-                  </button>
-                  <button
-                    onClick={handleFinish}
-                    className="flex items-center justify-center gap-2 bg-white/80 border border-gray-200 text-[#495057] font-semibold py-3 rounded-2xl active:opacity-80 transition-opacity shadow-sm"
-                  >
-                    <Square size={18} />
-                    Finish
-                  </button>
-                </div>
+              <p className="text-center text-xs font-semibold text-black/50 uppercase tracking-widest mb-2"
+                 style={{ textShadow: STAT_SHADOW }}>
+                Paused
+              </p>
+              <p className="text-center font-black text-black leading-none mb-4"
+                 style={{ fontSize: "3.5rem", textShadow: STAT_SHADOW }}>
+                {formatDistance(distanceMeters, unit)}
+                <span className="text-xl font-semibold text-black/40 ml-2">{unit}</span>
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleResume}
+                  className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-4 font-semibold text-white active:opacity-70 transition-opacity"
+                  style={{ background: "rgba(73,80,87,0.88)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}
+                >
+                  <Play size={18} />
+                  Resume
+                </button>
+                <button
+                  onClick={handleFinish}
+                  className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-4 font-semibold text-[#495057] active:opacity-70 transition-opacity"
+                  style={BTN_GLASS}
+                >
+                  <Square size={18} />
+                  Finish
+                </button>
               </div>
             </div>
           )}
@@ -413,8 +421,10 @@ export default function RunPage() {
               <div
                 className="rounded-3xl p-5 space-y-5"
                 style={{
-                  ...GLASS,
                   background: "rgba(255,255,255,0.92)",
+                  backdropFilter: "blur(16px)",
+                  WebkitBackdropFilter: "blur(16px)",
+                  border: `1px solid ${BLUE_BORDER}`,
                 }}
               >
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
@@ -483,6 +493,20 @@ export default function RunPage() {
         </div>
       )}
     </>
+  );
+}
+
+function MapStat({ label, value, shadow }: { label: string; value: string; shadow: string }) {
+  return (
+    <div className="text-center">
+      <p className="text-3xl font-black text-black leading-none" style={{ textShadow: shadow }}>
+        {value}
+      </p>
+      <p className="text-[11px] font-semibold text-black/55 mt-0.5 uppercase tracking-wider"
+         style={{ textShadow: shadow }}>
+        {label}
+      </p>
+    </div>
   );
 }
 

@@ -21,9 +21,8 @@ interface RunSession {
   distance_meters: number | null;
 }
 
-const CARD_BG  = "rgba(252, 245, 199, 0.55)";
-const RUN_BG   = "rgba(121, 173, 220, 0.18)";
-const RUN_BORDER = "rgba(121, 173, 220, 0.40)";
+const RUN_BG     = "rgba(121, 173, 220, 0.18)";
+const RUN_BORDER = "1px solid rgba(121, 173, 220, 0.30)";
 
 export default function Dashboard() {
   const { data } = useSWR<WeekStatus>("/api/workouts/week", fetcher);
@@ -55,8 +54,8 @@ export default function Dashboard() {
         <StatChip label="Total" value={total} />
       </div>
 
-      {/* One unified action card — no dividers, all three equally spaced */}
-      <div className="rounded-3xl p-5 border border-[#f0e8a0]/60" style={{ background: CARD_BG }}>
+      {/* Unified action card — all activities together, blue tint */}
+      <div className="rounded-3xl p-5" style={{ background: RUN_BG, border: RUN_BORDER }}>
 
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-5">This week</p>
 
@@ -80,32 +79,25 @@ export default function Dashboard() {
               <ChevronRight size={16} className="text-gray-300 flex-shrink-0" />
             </div>
           </Link>
+
+          <Link href="/run">
+            <div className="bg-white rounded-2xl px-5 py-5 flex items-center justify-between shadow-sm border border-white/80 active:opacity-80 transition-opacity">
+              <div className="flex items-center gap-4">
+                <Activity size={18} className="text-gray-400 flex-shrink-0" />
+                <div>
+                  <p className="font-semibold text-[#495057] text-base">Start a Run</p>
+                  <p className="text-gray-400 text-xs mt-0.5">
+                    {lastRun
+                      ? `Last: ${formatDistance(lastRun.distance_meters ?? 0, unit)} ${unit}${lastRun.duration_seconds ? ` · ${formatDuration(lastRun.duration_seconds)}` : ""}`
+                      : "Track distance, pace & route"}
+                  </p>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-gray-300 flex-shrink-0" />
+            </div>
+          </Link>
         </div>
 
-      </div>
-
-      {/* Run card */}
-      <div
-        className="rounded-3xl p-5"
-        style={{ background: RUN_BG, border: `1px solid ${RUN_BORDER}` }}
-      >
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-5">Running</p>
-        <Link href="/run">
-          <div className="bg-white rounded-2xl px-5 py-5 flex items-center justify-between shadow-sm border border-white/80 active:opacity-80 transition-opacity">
-            <div className="flex items-center gap-4">
-              <Activity size={18} className="text-gray-400 flex-shrink-0" />
-              <div>
-                <p className="font-semibold text-[#495057] text-base">Start a Run</p>
-                <p className="text-gray-400 text-xs mt-0.5">
-                  {lastRun
-                    ? `Last: ${formatDistance(lastRun.distance_meters ?? 0, unit)} ${unit}${lastRun.duration_seconds ? ` · ${formatDuration(lastRun.duration_seconds)}` : ""}`
-                    : "Track distance, pace & route"}
-                </p>
-              </div>
-            </div>
-            <ChevronRight size={16} className="text-gray-300 flex-shrink-0" />
-          </div>
-        </Link>
       </div>
     </div>
   );
