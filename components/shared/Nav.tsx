@@ -11,8 +11,13 @@ export default function Nav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      className="fixed bottom-0 left-0 right-0 border-t border-gray-200/50 z-50"
+      style={{
+        paddingBottom: "env(safe-area-inset-bottom)",
+        background: "rgba(255,255,255,0.75)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+      }}
     >
       <div className="max-w-lg mx-auto flex items-center">
 

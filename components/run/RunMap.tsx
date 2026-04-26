@@ -14,6 +14,8 @@ export default function RunMap({ points, currentPos, isLive }: Props) {
   const mapRef = useRef<LeafletMap | null>(null);
   const polylineRef = useRef<L.Polyline | null>(null);
   const markerRef = useRef<L.CircleMarker | null>(null);
+  const onTouchStartRef = useRef<((e: TouchEvent) => void) | null>(null);
+  const onTouchEndRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -37,6 +39,7 @@ export default function RunMap({ points, currentPos, isLive }: Props) {
         zoom: 16,
         zoomControl: false,
         attributionControl: false,
+        dragging: false, // start with dragging off; only enable on two-finger touch
       });
 
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -59,10 +62,26 @@ export default function RunMap({ points, currentPos, isLive }: Props) {
       }
 
       mapRef.current = map;
+
+      // Two-finger drag: enable dragging only when 2+ touches detected
+      const el = containerRef.current!;
+      const onTouchStart = (e: TouchEvent) => {
+        if (e.touches.length >= 2) map.dragging.enable();
+        else map.dragging.disable();
+      };
+      const onTouchEnd = () => map.dragging.disable();
+      onTouchStartRef.current = onTouchStart;
+      onTouchEndRef.current = onTouchEnd;
+      el.addEventListener("touchstart", onTouchStart, { passive: true });
+      el.addEventListener("touchend", onTouchEnd, { passive: true });
     });
 
     return () => {
       mounted = false;
+      if (containerRef.current) {
+        if (onTouchStartRef.current) containerRef.current.removeEventListener("touchstart", onTouchStartRef.current);
+        if (onTouchEndRef.current) containerRef.current.removeEventListener("touchend", onTouchEndRef.current);
+      }
       mapRef.current?.remove();
       mapRef.current = null;
       polylineRef.current = null;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Play, Pause, Square, RotateCcw } from "lucide-react";
@@ -246,226 +246,243 @@ export default function RunPage() {
       ? Math.floor((Date.now() - splitStartTimeRef.current) / 1000)
       : null;
 
+  const GLASS = {
+    background: "rgba(255,255,255,0.82)",
+    backdropFilter: "blur(16px)",
+    WebkitBackdropFilter: "blur(16px)",
+    border: `1px solid ${BLUE_BORDER}`,
+  } as React.CSSProperties;
+
   return (
-    <div className="pt-10 pb-6 space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-3xl font-bold text-[#495057] tracking-tight">Run</h1>
-      </div>
-
-      {/* READY */}
+    <>
+      {/* ── READY ─────────────────────────────────────────────────────────── */}
       {phase === "ready" && (
-        <div
-          className="rounded-3xl p-6 space-y-8"
-          style={{ background: BLUE_BG, border: `1px solid ${BLUE_BORDER}` }}
-        >
-          <div className="text-center space-y-2">
-            <button
-              onClick={toggle}
-              className="text-7xl font-bold text-[#495057] tracking-tight leading-none"
-            >
-              0.00
-            </button>
-            <button
-              onClick={toggle}
-              className="text-base text-gray-500 font-medium underline-offset-2 hover:underline"
-            >
-              {unitLabel(unit)}
-            </button>
+        <div className="pt-10 pb-6 space-y-6">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold text-[#495057] tracking-tight">Run</h1>
           </div>
-
-          {gpsError && (
-            <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-3">
-              <p className="text-red-600 text-sm">{gpsError}</p>
-            </div>
-          )}
-
-          <div className="space-y-3">
-            <button
-              onClick={handleStart}
-              className="w-full bg-[#495057] text-white font-bold text-lg py-4 rounded-2xl active:opacity-80 transition-opacity"
-            >
-              Start Run
-            </button>
-            <p className="text-center text-xs text-gray-400">
-              Keep screen on for uninterrupted tracking
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Map — single instance, stays mounted across active/paused/summary */}
-      {phase !== "ready" && (mapPoints.length > 0 || phase === "active") && (
-        <div
-          className="rounded-3xl overflow-hidden"
-          style={{ height: 260, border: `1px solid ${BLUE_BORDER}` }}
-        >
-          <RunMap points={mapPoints} currentPos={currentPos} isLive={phase === "active"} />
-        </div>
-      )}
-
-      {/* ACTIVE */}
-      {phase === "active" && (
-        <div className="space-y-4">
-
           <div
-            className="rounded-3xl p-5 space-y-4"
+            className="rounded-3xl p-6 space-y-8"
             style={{ background: BLUE_BG, border: `1px solid ${BLUE_BORDER}` }}
           >
-            <div className="grid grid-cols-2 gap-3">
-              <StatTile label={`Distance (${unit})`} value={formatDistance(distanceMeters, unit)} />
-              <StatTile label="Duration" value={formatDuration(elapsedSeconds)} />
-              <StatTile
-                label={`Pace${paceLabel(unit)}`}
-                value={avgPaceSec > 0 ? formatPace(avgPaceSec, unit) : "--:--"}
-              />
-              <StatTile
-                label={`Elevation${unit === "mi" ? " (ft)" : " (m)"}`}
-                value={formatElevation(elevationGain, unit)}
-              />
-            </div>
-
-            {currentSplitElapsed !== null && (
-              <p className="text-xs text-gray-500 text-center">
-                {splitLabel(currentKmInProgress, unit)} · {formatDuration(currentSplitElapsed)} so far
-              </p>
-            )}
-
-            <div className="grid grid-cols-2 gap-3">
+            <div className="text-center space-y-2">
               <button
-                onClick={handlePause}
-                className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-[#495057] font-semibold py-3 rounded-2xl active:opacity-80 transition-opacity shadow-sm"
+                onClick={toggle}
+                className="text-7xl font-bold text-[#495057] tracking-tight leading-none"
               >
-                <Pause size={18} />
-                Pause
+                0.00
               </button>
               <button
-                onClick={handleFinish}
-                className="flex items-center justify-center gap-2 bg-[#495057] text-white font-semibold py-3 rounded-2xl active:opacity-80 transition-opacity"
+                onClick={toggle}
+                className="text-base text-gray-500 font-medium underline-offset-2 hover:underline"
               >
-                <Square size={18} />
-                Finish
+                {unitLabel(unit)}
               </button>
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* PAUSED */}
-      {phase === "paused" && (
-        <div className="space-y-4">
-          <div
-            className="rounded-3xl p-5 space-y-4"
-            style={{ background: BLUE_BG, border: `1px solid ${BLUE_BORDER}` }}
-          >
-            <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
-              <span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" />
-              Paused
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <StatTile label={`Distance (${unit})`} value={formatDistance(distanceMeters, unit)} />
-              <StatTile label="Duration" value={formatDuration(elapsedSeconds)} />
-              <StatTile
-                label={`Pace${paceLabel(unit)}`}
-                value={avgPaceSec > 0 ? formatPace(avgPaceSec, unit) : "--:--"}
-              />
-              <StatTile
-                label={`Elevation${unit === "mi" ? " (ft)" : " (m)"}`}
-                value={formatElevation(elevationGain, unit)}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={handleResume}
-                className="flex items-center justify-center gap-2 bg-[#495057] text-white font-semibold py-3 rounded-2xl active:opacity-80 transition-opacity"
-              >
-                <Play size={18} />
-                Resume
-              </button>
-              <button
-                onClick={handleFinish}
-                className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-[#495057] font-semibold py-3 rounded-2xl active:opacity-80 transition-opacity shadow-sm"
-              >
-                <Square size={18} />
-                Finish
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* SUMMARY */}
-      {phase === "summary" && (
-        <div className="space-y-4">
-          <div
-            className="rounded-3xl p-5 space-y-5"
-            style={{ background: BLUE_BG, border: `1px solid ${BLUE_BORDER}` }}
-          >
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
-              Run Summary
-            </p>
-
-            <div className="grid grid-cols-2 gap-3">
-              <StatTile label={`Distance (${unit})`} value={formatDistance(distanceMeters, unit)} large />
-              <StatTile label="Duration" value={formatDuration(elapsedSeconds)} large />
-              <StatTile
-                label={`Avg Pace${paceLabel(unit)}`}
-                value={avgPaceSec > 0 ? formatPace(avgPaceSec, unit) : "--:--"}
-              />
-              <StatTile
-                label={`Elevation${unit === "mi" ? " (ft)" : " (m)"}`}
-                value={formatElevation(elevationGain, unit)}
-              />
-            </div>
-
-            {splits.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Splits</p>
-                <div className="space-y-1">
-                  {splits.map((s) => (
-                    <div key={s.km} className="flex justify-between text-sm">
-                      <span className="text-gray-500">{splitLabel(s.km, unit)}</span>
-                      <span className="font-semibold text-[#495057]">
-                        {formatPace(s.pace_sec, unit)}{paceLabel(unit)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+            {gpsError && (
+              <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-3">
+                <p className="text-red-600 text-sm">{gpsError}</p>
               </div>
             )}
 
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Notes</p>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="How did it feel?"
-                rows={2}
-                className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm text-[#495057] placeholder:text-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-[#79addc]/40"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-3">
               <button
-                onClick={handleDiscard}
-                className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-500 font-semibold py-3 rounded-2xl active:opacity-80 transition-opacity shadow-sm"
+                onClick={handleStart}
+                className="w-full bg-[#495057] text-white font-bold text-lg py-4 rounded-2xl active:opacity-80 transition-opacity"
               >
-                <RotateCcw size={16} />
-                Discard
+                Start Run
               </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="bg-[#495057] text-white font-bold py-3 rounded-2xl active:opacity-80 transition-opacity disabled:opacity-50"
-              >
-                {saving ? "Saving…" : "Save Run"}
-              </button>
+              <p className="text-center text-xs text-gray-400">
+                Keep screen on for uninterrupted tracking
+              </p>
             </div>
           </div>
         </div>
       )}
-    </div>
+
+      {/* ── FULL-SCREEN RUN VIEW ──────────────────────────────────────────── */}
+      {phase !== "ready" && (
+        <div className="fixed inset-0 z-20">
+
+          {/* Map — fills the entire screen */}
+          <div className="absolute inset-0">
+            <RunMap points={mapPoints} currentPos={currentPos} isLive={phase === "active"} />
+          </div>
+
+          {/* ── ACTIVE overlay ─────────────────────────────────────────────── */}
+          {phase === "active" && (
+            <div
+              className="absolute bottom-0 left-0 right-0 max-w-lg mx-auto px-4"
+              style={{ paddingBottom: "calc(4.5rem + env(safe-area-inset-bottom))" }}
+            >
+              <div className="rounded-3xl p-5 space-y-4" style={GLASS}>
+                <div className="grid grid-cols-2 gap-3">
+                  <StatTile label={`Distance (${unit})`} value={formatDistance(distanceMeters, unit)} />
+                  <StatTile label="Duration" value={formatDuration(elapsedSeconds)} />
+                  <StatTile
+                    label={`Pace${paceLabel(unit)}`}
+                    value={avgPaceSec > 0 ? formatPace(avgPaceSec, unit) : "--:--"}
+                  />
+                  <StatTile
+                    label={`Elevation${unit === "mi" ? " (ft)" : " (m)"}`}
+                    value={formatElevation(elevationGain, unit)}
+                  />
+                </div>
+
+                {currentSplitElapsed !== null && (
+                  <p className="text-xs text-gray-500 text-center">
+                    {splitLabel(currentKmInProgress, unit)} · {formatDuration(currentSplitElapsed)} so far
+                  </p>
+                )}
+
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={handlePause}
+                    className="flex items-center justify-center gap-2 bg-white/80 border border-gray-200 text-[#495057] font-semibold py-3 rounded-2xl active:opacity-80 transition-opacity shadow-sm"
+                  >
+                    <Pause size={18} />
+                    Pause
+                  </button>
+                  <button
+                    onClick={handleFinish}
+                    className="flex items-center justify-center gap-2 bg-[#495057]/90 text-white font-semibold py-3 rounded-2xl active:opacity-80 transition-opacity"
+                  >
+                    <Square size={18} />
+                    Finish
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── PAUSED overlay ──────────────────────────────────────────────── */}
+          {phase === "paused" && (
+            <div
+              className="absolute bottom-0 left-0 right-0 max-w-lg mx-auto px-4"
+              style={{ paddingBottom: "calc(4.5rem + env(safe-area-inset-bottom))" }}
+            >
+              <div className="rounded-3xl p-5 space-y-4" style={GLASS}>
+                <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+                  <span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" />
+                  Paused
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <StatTile label={`Distance (${unit})`} value={formatDistance(distanceMeters, unit)} />
+                  <StatTile label="Duration" value={formatDuration(elapsedSeconds)} />
+                  <StatTile
+                    label={`Pace${paceLabel(unit)}`}
+                    value={avgPaceSec > 0 ? formatPace(avgPaceSec, unit) : "--:--"}
+                  />
+                  <StatTile
+                    label={`Elevation${unit === "mi" ? " (ft)" : " (m)"}`}
+                    value={formatElevation(elevationGain, unit)}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={handleResume}
+                    className="flex items-center justify-center gap-2 bg-[#495057]/90 text-white font-semibold py-3 rounded-2xl active:opacity-80 transition-opacity"
+                  >
+                    <Play size={18} />
+                    Resume
+                  </button>
+                  <button
+                    onClick={handleFinish}
+                    className="flex items-center justify-center gap-2 bg-white/80 border border-gray-200 text-[#495057] font-semibold py-3 rounded-2xl active:opacity-80 transition-opacity shadow-sm"
+                  >
+                    <Square size={18} />
+                    Finish
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── SUMMARY overlay (scrollable) ─────────────────────────────── */}
+          {phase === "summary" && (
+            <div
+              className="absolute inset-x-0 bottom-0 max-w-lg mx-auto px-4 overflow-y-auto"
+              style={{
+                maxHeight: "80vh",
+                paddingBottom: "calc(4.5rem + env(safe-area-inset-bottom))",
+              }}
+            >
+              <div
+                className="rounded-3xl p-5 space-y-5"
+                style={{
+                  ...GLASS,
+                  background: "rgba(255,255,255,0.92)",
+                }}
+              >
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+                  Run Summary
+                </p>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <StatTile label={`Distance (${unit})`} value={formatDistance(distanceMeters, unit)} large />
+                  <StatTile label="Duration" value={formatDuration(elapsedSeconds)} large />
+                  <StatTile
+                    label={`Avg Pace${paceLabel(unit)}`}
+                    value={avgPaceSec > 0 ? formatPace(avgPaceSec, unit) : "--:--"}
+                  />
+                  <StatTile
+                    label={`Elevation${unit === "mi" ? " (ft)" : " (m)"}`}
+                    value={formatElevation(elevationGain, unit)}
+                  />
+                </div>
+
+                {splits.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Splits</p>
+                    <div className="space-y-1">
+                      {splits.map((s) => (
+                        <div key={s.km} className="flex justify-between text-sm">
+                          <span className="text-gray-500">{splitLabel(s.km, unit)}</span>
+                          <span className="font-semibold text-[#495057]">
+                            {formatPace(s.pace_sec, unit)}{paceLabel(unit)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Notes</p>
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="How did it feel?"
+                    rows={2}
+                    className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm text-[#495057] placeholder:text-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-[#79addc]/40"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={handleDiscard}
+                    className="flex items-center justify-center gap-2 bg-white/80 border border-gray-200 text-gray-500 font-semibold py-3 rounded-2xl active:opacity-80 transition-opacity shadow-sm"
+                  >
+                    <RotateCcw size={16} />
+                    Discard
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="bg-[#495057]/90 text-white font-bold py-3 rounded-2xl active:opacity-80 transition-opacity disabled:opacity-50"
+                  >
+                    {saving ? "Saving…" : "Save Run"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </>
   );
 }
 
