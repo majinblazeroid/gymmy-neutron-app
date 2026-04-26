@@ -365,8 +365,8 @@ export default function RunPage() {
             <div className="flex justify-center mb-3">
               <button
                 onClick={toggle}
-                className="text-sm font-semibold text-black/50 uppercase tracking-wider"
-                style={{ textShadow: STAT_SHADOW }}
+                className="rounded-xl px-4 py-2 text-sm font-semibold text-[#495057] uppercase tracking-wider active:opacity-70 transition-opacity"
+                style={BTN_GLASS}
               >
                 {unitLabel(unit)}
               </button>
