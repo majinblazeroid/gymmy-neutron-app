@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { Play, Pause, Square, RotateCcw, ChevronLeft } from "lucide-react";
+import Link from "next/link";
+import { Play, Pause, Square, RotateCcw, Clock } from "lucide-react";
 import {
   haversineDistance,
   calcElevationGain,
@@ -279,27 +280,6 @@ export default function RunPage() {
         <RunMap points={mapPoints} currentPos={currentPos} isLive={phase === "active"} />
       </div>
 
-      {/* BACK BUTTON — top-left, ready phase only */}
-      <div
-        className="absolute top-0 left-0 z-10"
-        style={{
-          paddingTop: "calc(env(safe-area-inset-top) + 1rem)",
-          paddingLeft: "1.25rem",
-          opacity: phase === "ready" ? 1 : 0,
-          pointerEvents: phase === "ready" ? "auto" : "none",
-          transition: "opacity 0.35s ease",
-        }}
-      >
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-1.5 rounded-2xl px-4 py-2.5 font-semibold text-[#495057] text-sm active:opacity-70 transition-opacity"
-          style={BTN_GLASS}
-        >
-          <ChevronLeft size={16} />
-          Back
-        </button>
-      </div>
-
       {/* TOP STATS — active/paused: 3-stat row; summary: 2×2 grid */}
 
       {/* Active / Paused strip */}
@@ -341,160 +321,183 @@ export default function RunPage() {
         </div>
       </div>
 
-      {/* BOTTOM CONTROLS — all 4 states stacked, crossfade via opacity */}
+      {/* TRANSLUCENT NAV — ready phase only, map visible through it */}
+      <div
+        className="absolute bottom-0 left-0 right-0 z-10"
+        style={{
+          paddingBottom: "env(safe-area-inset-bottom)",
+          background: "rgba(255,255,255,0.18)",
+          backdropFilter: "blur(14px)",
+          WebkitBackdropFilter: "blur(14px)",
+          borderTop: "1px solid rgba(255,255,255,0.25)",
+          opacity: phase === "ready" ? 1 : 0,
+          pointerEvents: phase === "ready" ? "auto" : "none",
+          transition: "opacity 0.35s ease",
+        }}
+      >
+        <div className="max-w-lg mx-auto flex items-center">
+          <Link href="/" className="flex-1 flex flex-col items-center gap-1 py-3">
+            <div className="w-9 h-9 rounded-full flex items-center justify-center -mt-1"
+                 style={{ background: "rgba(73,80,87,0.55)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }}>
+              <span className="text-white text-2xl leading-none font-light">+</span>
+            </div>
+          </Link>
+          <Link href="/history" className="flex-1 flex flex-col items-center gap-1 py-3 text-[#495057]/60">
+            <Clock size={20} strokeWidth={1.5} />
+            <span className="text-xs font-medium">History</span>
+          </Link>
+        </div>
+      </div>
+
+      {/* ── READY controls — sits above the nav ─────────────────────── */}
+      <div
+        className="absolute left-0 right-0 z-10 px-6"
+        style={{
+          bottom: "calc(env(safe-area-inset-bottom) + 64px)",
+          paddingBottom: "1.5rem",
+          opacity: phase === "ready" ? 1 : 0,
+          pointerEvents: phase === "ready" ? "auto" : "none",
+          transition: "opacity 0.35s ease",
+        }}
+      >
+        {gpsError && (
+          <div className="bg-red-50/90 border border-red-200 rounded-2xl px-4 py-3 mb-3">
+            <p className="text-red-600 text-sm">{gpsError}</p>
+          </div>
+        )}
+        <div className="flex justify-center mb-3">
+          <button
+            onClick={toggle}
+            className="rounded-xl px-4 py-2 text-sm font-semibold text-[#495057] uppercase tracking-wider active:opacity-70 transition-opacity"
+            style={BTN_GLASS}
+          >
+            {unitLabel(unit)}
+          </button>
+        </div>
+        <button
+          onClick={handleStart}
+          className="w-full flex items-center justify-center gap-2 rounded-2xl py-4 font-bold text-[#495057] text-lg active:opacity-70 transition-opacity"
+          style={BTN_GLASS}
+        >
+          <Play size={20} />
+          Start Run
+        </button>
+      </div>
+
+      {/* ── ACTIVE controls ─────────────────────────────────────────── */}
       <div
         className="absolute bottom-0 left-0 right-0 z-10 px-6"
-        style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))" }}
+        style={{
+          paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))",
+          opacity: phase === "active" ? 1 : 0,
+          pointerEvents: phase === "active" ? "auto" : "none",
+          transition: "opacity 0.35s ease",
+        }}
       >
-        <div style={{ display: "grid" }}>
-
-          {/* ── READY ──────────────────────────────────────────────── */}
-          <div
-            style={{
-              gridArea: "1 / 1",
-              opacity: phase === "ready" ? 1 : 0,
-              pointerEvents: phase === "ready" ? "auto" : "none",
-              transition: "opacity 0.35s ease",
-            }}
+        {currentSplitElapsed !== null && (
+          <p className="text-center text-xs font-semibold text-black/50 mb-2"
+             style={{ textShadow: STAT_SHADOW }}>
+            {splitLabel(currentKmInProgress, unit)} · {formatDuration(currentSplitElapsed)} so far
+          </p>
+        )}
+        <p className="text-center font-black text-black leading-none mb-4"
+           style={{ fontSize: "3.5rem", textShadow: STAT_SHADOW }}>
+          {formatDistance(distanceMeters, unit)}
+          <span className="text-xl font-semibold text-black/40 ml-2">{unit}</span>
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={handlePause}
+            className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-4 font-semibold text-[#495057] active:opacity-70 transition-opacity"
+            style={BTN_GLASS}
           >
-            {gpsError && (
-              <div className="bg-red-50/90 border border-red-200 rounded-2xl px-4 py-3 mb-3">
-                <p className="text-red-600 text-sm">{gpsError}</p>
-              </div>
-            )}
-            <div className="flex justify-center mb-3">
-              <button
-                onClick={toggle}
-                className="rounded-xl px-4 py-2 text-sm font-semibold text-[#495057] uppercase tracking-wider active:opacity-70 transition-opacity"
-                style={BTN_GLASS}
-              >
-                {unitLabel(unit)}
-              </button>
-            </div>
-            <button
-              onClick={handleStart}
-              className="w-full flex items-center justify-center gap-2 rounded-2xl py-4 font-bold text-[#495057] text-lg active:opacity-70 transition-opacity"
-              style={BTN_GLASS}
-            >
-              <Play size={20} />
-              Start Run
-            </button>
-          </div>
-
-          {/* ── ACTIVE ─────────────────────────────────────────────── */}
-          <div
-            style={{
-              gridArea: "1 / 1",
-              opacity: phase === "active" ? 1 : 0,
-              pointerEvents: phase === "active" ? "auto" : "none",
-              transition: "opacity 0.35s ease",
-            }}
+            <Pause size={18} />
+            Pause
+          </button>
+          <button
+            onClick={handleFinish}
+            className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-4 font-semibold text-white active:opacity-70 transition-opacity"
+            style={{ background: "rgba(73,80,87,0.88)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}
           >
-            {currentSplitElapsed !== null && (
-              <p className="text-center text-xs font-semibold text-black/50 mb-2"
-                 style={{ textShadow: STAT_SHADOW }}>
-                {splitLabel(currentKmInProgress, unit)} · {formatDuration(currentSplitElapsed)} so far
-              </p>
-            )}
-            <p className="text-center font-black text-black leading-none mb-4"
-               style={{ fontSize: "3.5rem", textShadow: STAT_SHADOW }}>
-              {formatDistance(distanceMeters, unit)}
-              <span className="text-xl font-semibold text-black/40 ml-2">{unit}</span>
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={handlePause}
-                className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-4 font-semibold text-[#495057] active:opacity-70 transition-opacity"
-                style={BTN_GLASS}
-              >
-                <Pause size={18} />
-                Pause
-              </button>
-              <button
-                onClick={handleFinish}
-                className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-4 font-semibold text-white active:opacity-70 transition-opacity"
-                style={{ background: "rgba(73,80,87,0.88)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}
-              >
-                <Square size={18} />
-                Finish
-              </button>
-            </div>
-          </div>
+            <Square size={18} />
+            Finish
+          </button>
+        </div>
+      </div>
 
-          {/* ── PAUSED ─────────────────────────────────────────────── */}
-          <div
-            style={{
-              gridArea: "1 / 1",
-              opacity: phase === "paused" ? 1 : 0,
-              pointerEvents: phase === "paused" ? "auto" : "none",
-              transition: "opacity 0.35s ease",
-            }}
+      {/* ── PAUSED controls ─────────────────────────────────────────── */}
+      <div
+        className="absolute bottom-0 left-0 right-0 z-10 px-6"
+        style={{
+          paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))",
+          opacity: phase === "paused" ? 1 : 0,
+          pointerEvents: phase === "paused" ? "auto" : "none",
+          transition: "opacity 0.35s ease",
+        }}
+      >
+        <p className="text-center text-xs font-semibold text-black/50 uppercase tracking-widest mb-2"
+           style={{ textShadow: STAT_SHADOW }}>
+          Paused
+        </p>
+        <p className="text-center font-black text-black leading-none mb-4"
+           style={{ fontSize: "3.5rem", textShadow: STAT_SHADOW }}>
+          {formatDistance(distanceMeters, unit)}
+          <span className="text-xl font-semibold text-black/40 ml-2">{unit}</span>
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={handleResume}
+            className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-4 font-semibold text-white active:opacity-70 transition-opacity"
+            style={{ background: "rgba(73,80,87,0.88)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}
           >
-            <p className="text-center text-xs font-semibold text-black/50 uppercase tracking-widest mb-2"
-               style={{ textShadow: STAT_SHADOW }}>
-              Paused
-            </p>
-            <p className="text-center font-black text-black leading-none mb-4"
-               style={{ fontSize: "3.5rem", textShadow: STAT_SHADOW }}>
-              {formatDistance(distanceMeters, unit)}
-              <span className="text-xl font-semibold text-black/40 ml-2">{unit}</span>
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={handleResume}
-                className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-4 font-semibold text-white active:opacity-70 transition-opacity"
-                style={{ background: "rgba(73,80,87,0.88)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}
-              >
-                <Play size={18} />
-                Resume
-              </button>
-              <button
-                onClick={handleFinish}
-                className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-4 font-semibold text-[#495057] active:opacity-70 transition-opacity"
-                style={BTN_GLASS}
-              >
-                <Square size={18} />
-                Finish
-              </button>
-            </div>
-          </div>
-
-          {/* ── SUMMARY ────────────────────────────────────────────── */}
-          <div
-            style={{
-              gridArea: "1 / 1",
-              opacity: phase === "summary" ? 1 : 0,
-              pointerEvents: phase === "summary" ? "auto" : "none",
-              transition: "opacity 0.35s ease",
-            }}
+            <Play size={18} />
+            Resume
+          </button>
+          <button
+            onClick={handleFinish}
+            className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-4 font-semibold text-[#495057] active:opacity-70 transition-opacity"
+            style={BTN_GLASS}
           >
-            <input
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="How did it feel? (optional note)"
-              className="w-full rounded-2xl px-4 py-3.5 text-sm text-[#495057] placeholder:text-black/35 focus:outline-none mb-3"
-              style={BTN_GLASS}
-            />
-            <div className="flex gap-3">
-              <button
-                onClick={handleDiscard}
-                className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-4 font-semibold text-[#495057] active:opacity-70 transition-opacity"
-                style={BTN_GLASS}
-              >
-                <RotateCcw size={16} />
-                Discard
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="flex-1 flex items-center justify-center rounded-2xl py-4 font-bold text-white active:opacity-70 transition-opacity disabled:opacity-50"
-                style={{ background: "rgba(73,80,87,0.88)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}
-              >
-                {saving ? "Saving…" : "Save Run"}
-              </button>
-            </div>
-          </div>
+            <Square size={18} />
+            Finish
+          </button>
+        </div>
+      </div>
 
+      {/* ── SUMMARY controls ────────────────────────────────────────── */}
+      <div
+        className="absolute bottom-0 left-0 right-0 z-10 px-6"
+        style={{
+          paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))",
+          opacity: phase === "summary" ? 1 : 0,
+          pointerEvents: phase === "summary" ? "auto" : "none",
+          transition: "opacity 0.35s ease",
+        }}
+      >
+        <input
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="How did it feel? (optional note)"
+          className="w-full rounded-2xl px-4 py-3.5 text-sm text-[#495057] placeholder:text-black/35 focus:outline-none mb-3"
+          style={BTN_GLASS}
+        />
+        <div className="flex gap-3">
+          <button
+            onClick={handleDiscard}
+            className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-4 font-semibold text-[#495057] active:opacity-70 transition-opacity"
+            style={BTN_GLASS}
+          >
+            <RotateCcw size={16} />
+            Discard
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex-1 flex items-center justify-center rounded-2xl py-4 font-bold text-white active:opacity-70 transition-opacity disabled:opacity-50"
+            style={{ background: "rgba(73,80,87,0.88)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}
+          >
+            {saving ? "Saving…" : "Save Run"}
+          </button>
         </div>
       </div>
 
