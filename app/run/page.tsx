@@ -134,22 +134,29 @@ export default function RunPage() {
     watchIdRef.current = navigator.geolocation.watchPosition(
       onGpsPoint,
       (err) => {
-        if (err.code === 1) setGpsError("Location permission denied. Please enable it in your browser settings.");
+        if (err.code === 1) setGpsError("Location access denied. On iPhone, go to Settings → Safari → Location and set to Allow.");
         else setGpsError("Unable to get your location. Please check GPS signal.");
       },
       { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 }
     );
   }, [onGpsPoint]);
 
-  const handleStart = useCallback(async () => {
+  const handleStart = useCallback(() => {
     setGpsError(null);
+    const isInsecure =
+      window.location.protocol !== "https:" &&
+      window.location.hostname !== "localhost";
+    if (isInsecure) {
+      setGpsError("GPS requires HTTPS. Open the app via your Vercel URL to track location.");
+      return;
+    }
     setStartedAt(new Date().toISOString());
-    await acquireWakeLock();
+    setPhase("active");         // update UI immediately
+    acquireWakeLock();          // fire-and-forget
     startWatch();
     intervalRef.current = setInterval(() => {
       setElapsedSeconds((s) => s + 1);
     }, 1000);
-    setPhase("active");
   }, [acquireWakeLock, startWatch]);
 
   const handlePause = useCallback(() => {
@@ -159,13 +166,13 @@ export default function RunPage() {
     setPhase("paused");
   }, [stopWatch, stopInterval, releaseWakeLock]);
 
-  const handleResume = useCallback(async () => {
-    await acquireWakeLock();
+  const handleResume = useCallback(() => {
+    setPhase("active");         // update UI immediately
+    acquireWakeLock();          // fire-and-forget
     startWatch();
     intervalRef.current = setInterval(() => {
       setElapsedSeconds((s) => s + 1);
     }, 1000);
-    setPhase("active");
   }, [acquireWakeLock, startWatch]);
 
   const handleFinish = useCallback(() => {
@@ -286,15 +293,19 @@ export default function RunPage() {
         </div>
       )}
 
+      {/* Map — single instance, stays mounted across active/paused/summary */}
+      {phase !== "ready" && (mapPoints.length > 0 || phase === "active") && (
+        <div
+          className="rounded-3xl overflow-hidden"
+          style={{ height: 260, border: `1px solid ${BLUE_BORDER}` }}
+        >
+          <RunMap points={mapPoints} currentPos={currentPos} isLive={phase === "active"} />
+        </div>
+      )}
+
       {/* ACTIVE */}
       {phase === "active" && (
         <div className="space-y-4">
-          <div
-            className="rounded-3xl overflow-hidden"
-            style={{ height: 260, border: `1px solid ${BLUE_BORDER}` }}
-          >
-            <RunMap points={mapPoints} currentPos={currentPos} isLive={true} />
-          </div>
 
           <div
             className="rounded-3xl p-5 space-y-4"
@@ -343,13 +354,6 @@ export default function RunPage() {
       {phase === "paused" && (
         <div className="space-y-4">
           <div
-            className="rounded-3xl overflow-hidden"
-            style={{ height: 260, border: `1px solid ${BLUE_BORDER}` }}
-          >
-            <RunMap points={mapPoints} currentPos={currentPos} isLive={false} />
-          </div>
-
-          <div
             className="rounded-3xl p-5 space-y-4"
             style={{ background: BLUE_BG, border: `1px solid ${BLUE_BORDER}` }}
           >
@@ -394,15 +398,6 @@ export default function RunPage() {
       {/* SUMMARY */}
       {phase === "summary" && (
         <div className="space-y-4">
-          {mapPoints.length > 0 && (
-            <div
-              className="rounded-3xl overflow-hidden"
-              style={{ height: 260, border: `1px solid ${BLUE_BORDER}` }}
-            >
-              <RunMap points={mapPoints} currentPos={null} isLive={false} />
-            </div>
-          )}
-
           <div
             className="rounded-3xl p-5 space-y-5"
             style={{ background: BLUE_BG, border: `1px solid ${BLUE_BORDER}` }}

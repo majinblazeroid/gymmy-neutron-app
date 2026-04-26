@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Clock, Activity } from "lucide-react";
+import { Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Nav() {
   const pathname = usePathname();
   const historyActive = pathname === "/history";
-  const runActive = pathname.startsWith("/run");
 
   return (
     <nav
@@ -25,18 +24,6 @@ export default function Nav() {
           <div className="w-9 h-9 rounded-full bg-[#495057] flex items-center justify-center -mt-1">
             <span className="text-white text-2xl leading-none font-light">+</span>
           </div>
-        </Link>
-
-        {/* Run */}
-        <Link
-          href="/run"
-          className={cn(
-            "flex-1 flex flex-col items-center gap-1 py-3 text-xs transition-colors",
-            runActive ? "text-[#495057]" : "text-gray-400 hover:text-gray-600"
-          )}
-        >
-          <Activity size={20} strokeWidth={runActive ? 2.5 : 1.5} />
-          <span className={cn("font-medium", runActive && "font-semibold")}>Run</span>
         </Link>
 
         {/* History */}

@@ -17,9 +17,11 @@ export default function RunMap({ points, currentPos, isLive }: Props) {
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
+    let mounted = true;
 
     // dynamic import to avoid SSR issues
     import("leaflet").then((L) => {
+      if (!mounted || !containerRef.current) return; // bail if unmounted before promise resolved
       // fix default icon paths broken by webpack
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -60,6 +62,7 @@ export default function RunMap({ points, currentPos, isLive }: Props) {
     });
 
     return () => {
+      mounted = false;
       mapRef.current?.remove();
       mapRef.current = null;
       polylineRef.current = null;
