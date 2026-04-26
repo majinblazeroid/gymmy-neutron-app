@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { Play, Pause, Square, RotateCcw } from "lucide-react";
+import { Play, Pause, Square, RotateCcw, ChevronLeft } from "lucide-react";
 import {
   haversineDistance,
   calcElevationGain,
@@ -263,6 +263,14 @@ export default function RunPage() {
     border: "1px solid rgba(255,255,255,0.55)",
   } as React.CSSProperties;
 
+  const FROSTED_STRIP = {
+    background: "rgba(255,255,255,0.45)",
+    backdropFilter: "blur(10px)",
+    WebkitBackdropFilter: "blur(10px)",
+    borderRadius: "1rem",
+    padding: "0.6rem 1.5rem",
+  } as React.CSSProperties;
+
   return (
     <div className="fixed inset-0 z-[60]">
 
@@ -271,7 +279,30 @@ export default function RunPage() {
         <RunMap points={mapPoints} currentPos={currentPos} isLive={phase === "active"} />
       </div>
 
-      {/* TOP STATS HUD — frosted strip, fades in when running or paused */}
+      {/* BACK BUTTON — top-left, ready phase only */}
+      <div
+        className="absolute top-0 left-0 z-10"
+        style={{
+          paddingTop: "calc(env(safe-area-inset-top) + 1rem)",
+          paddingLeft: "1.25rem",
+          opacity: phase === "ready" ? 1 : 0,
+          pointerEvents: phase === "ready" ? "auto" : "none",
+          transition: "opacity 0.35s ease",
+        }}
+      >
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-1.5 rounded-2xl px-4 py-2.5 font-semibold text-[#495057] text-sm active:opacity-70 transition-opacity"
+          style={BTN_GLASS}
+        >
+          <ChevronLeft size={16} />
+          Back
+        </button>
+      </div>
+
+      {/* TOP STATS — active/paused: 3-stat row; summary: 2×2 grid */}
+
+      {/* Active / Paused strip */}
       <div
         className="absolute top-0 left-0 right-0 z-10 flex justify-center px-6"
         style={{
@@ -281,15 +312,7 @@ export default function RunPage() {
           pointerEvents: "none",
         }}
       >
-        <div
-          style={{
-            background: "rgba(255,255,255,0.45)",
-            backdropFilter: "blur(10px)",
-            WebkitBackdropFilter: "blur(10px)",
-            borderRadius: "1rem",
-            padding: "0.6rem 1.5rem",
-          }}
-        >
+        <div style={FROSTED_STRIP}>
           <div className="flex items-start gap-8">
             <MapStat label={`Pace ${paceLabel(unit)}`} value={avgPaceSec > 0 ? formatPace(avgPaceSec, unit) : "--:--"} shadow={STAT_SHADOW} />
             <MapStat label="Duration" value={formatDuration(elapsedSeconds)} shadow={STAT_SHADOW} />
@@ -298,195 +321,165 @@ export default function RunPage() {
         </div>
       </div>
 
-      {/* BOTTOM CONTROLS — all states stacked in same grid cell, crossfade via opacity */}
-      {phase !== "summary" && (
-        <div
-          className="absolute bottom-0 left-0 right-0 z-10 px-6"
-          style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))" }}
-        >
-          <div style={{ display: "grid" }}>
-
-            {/* ── READY ──────────────────────────────────────────────── */}
-            <div
-              style={{
-                gridArea: "1 / 1",
-                opacity: phase === "ready" ? 1 : 0,
-                pointerEvents: phase === "ready" ? "auto" : "none",
-                transition: "opacity 0.35s ease",
-              }}
-            >
-              {gpsError && (
-                <div className="bg-red-50/90 border border-red-200 rounded-2xl px-4 py-3 mb-3">
-                  <p className="text-red-600 text-sm">{gpsError}</p>
-                </div>
-              )}
-              <div className="flex justify-center mb-3">
-                <button
-                  onClick={toggle}
-                  className="text-sm font-semibold text-black/50 uppercase tracking-wider"
-                  style={{ textShadow: STAT_SHADOW }}
-                >
-                  {unitLabel(unit)}
-                </button>
-              </div>
-              <button
-                onClick={handleStart}
-                className="w-full flex items-center justify-center gap-2 rounded-2xl py-4 font-bold text-[#495057] text-lg active:opacity-70 transition-opacity"
-                style={BTN_GLASS}
-              >
-                <Play size={20} />
-                Start Run
-              </button>
-            </div>
-
-            {/* ── ACTIVE ─────────────────────────────────────────────── */}
-            <div
-              style={{
-                gridArea: "1 / 1",
-                opacity: phase === "active" ? 1 : 0,
-                pointerEvents: phase === "active" ? "auto" : "none",
-                transition: "opacity 0.35s ease",
-              }}
-            >
-              {currentSplitElapsed !== null && (
-                <p className="text-center text-xs font-semibold text-black/50 mb-2"
-                   style={{ textShadow: STAT_SHADOW }}>
-                  {splitLabel(currentKmInProgress, unit)} · {formatDuration(currentSplitElapsed)} so far
-                </p>
-              )}
-              <p className="text-center font-black text-black leading-none mb-4"
-                 style={{ fontSize: "3.5rem", textShadow: STAT_SHADOW }}>
-                {formatDistance(distanceMeters, unit)}
-                <span className="text-xl font-semibold text-black/40 ml-2">{unit}</span>
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={handlePause}
-                  className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-4 font-semibold text-[#495057] active:opacity-70 transition-opacity"
-                  style={BTN_GLASS}
-                >
-                  <Pause size={18} />
-                  Pause
-                </button>
-                <button
-                  onClick={handleFinish}
-                  className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-4 font-semibold text-white active:opacity-70 transition-opacity"
-                  style={{ background: "rgba(73,80,87,0.88)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}
-                >
-                  <Square size={18} />
-                  Finish
-                </button>
-              </div>
-            </div>
-
-            {/* ── PAUSED ─────────────────────────────────────────────── */}
-            <div
-              style={{
-                gridArea: "1 / 1",
-                opacity: phase === "paused" ? 1 : 0,
-                pointerEvents: phase === "paused" ? "auto" : "none",
-                transition: "opacity 0.35s ease",
-              }}
-            >
-              <p className="text-center text-xs font-semibold text-black/50 uppercase tracking-widest mb-2"
-                 style={{ textShadow: STAT_SHADOW }}>
-                Paused
-              </p>
-              <p className="text-center font-black text-black leading-none mb-4"
-                 style={{ fontSize: "3.5rem", textShadow: STAT_SHADOW }}>
-                {formatDistance(distanceMeters, unit)}
-                <span className="text-xl font-semibold text-black/40 ml-2">{unit}</span>
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={handleResume}
-                  className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-4 font-semibold text-white active:opacity-70 transition-opacity"
-                  style={{ background: "rgba(73,80,87,0.88)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}
-                >
-                  <Play size={18} />
-                  Resume
-                </button>
-                <button
-                  onClick={handleFinish}
-                  className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-4 font-semibold text-[#495057] active:opacity-70 transition-opacity"
-                  style={BTN_GLASS}
-                >
-                  <Square size={18} />
-                  Finish
-                </button>
-              </div>
-            </div>
-
+      {/* Summary 2×2 stats strip */}
+      <div
+        className="absolute top-0 left-0 right-0 z-10 flex justify-center px-6"
+        style={{
+          paddingTop: "calc(env(safe-area-inset-top) + 4.5rem)",
+          opacity: phase === "summary" ? 1 : 0,
+          transition: "opacity 0.35s ease",
+          pointerEvents: "none",
+        }}
+      >
+        <div style={FROSTED_STRIP}>
+          <div className="grid grid-cols-2 gap-x-10 gap-y-4">
+            <MapStat label={`Distance (${unit})`} value={formatDistance(distanceMeters, unit)} shadow={STAT_SHADOW} large />
+            <MapStat label="Duration" value={formatDuration(elapsedSeconds)} shadow={STAT_SHADOW} large />
+            <MapStat label={`Avg Pace${paceLabel(unit)}`} value={avgPaceSec > 0 ? formatPace(avgPaceSec, unit) : "--:--"} shadow={STAT_SHADOW} />
+            <MapStat label={unit === "mi" ? "Elev (ft)" : "Elev (m)"} value={formatElevation(elevationGain, unit)} shadow={STAT_SHADOW} />
           </div>
         </div>
-      )}
+      </div>
 
-      {/* ── SUMMARY overlay (scrollable) ─────────────────────────────── */}
-      {phase === "summary" && (
-        <div
-          className="absolute inset-x-0 bottom-0 max-w-lg mx-auto px-4 overflow-y-auto z-10"
-          style={{
-            maxHeight: "80vh",
-            paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))",
-          }}
-        >
+      {/* BOTTOM CONTROLS — all 4 states stacked, crossfade via opacity */}
+      <div
+        className="absolute bottom-0 left-0 right-0 z-10 px-6"
+        style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))" }}
+      >
+        <div style={{ display: "grid" }}>
+
+          {/* ── READY ──────────────────────────────────────────────── */}
           <div
-            className="rounded-3xl p-5 space-y-5"
             style={{
-              background: "rgba(255,255,255,0.92)",
-              backdropFilter: "blur(16px)",
-              WebkitBackdropFilter: "blur(16px)",
-              border: `1px solid ${BLUE_BORDER}`,
+              gridArea: "1 / 1",
+              opacity: phase === "ready" ? 1 : 0,
+              pointerEvents: phase === "ready" ? "auto" : "none",
+              transition: "opacity 0.35s ease",
             }}
           >
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
-              Run Summary
-            </p>
-
-            <div className="grid grid-cols-2 gap-3">
-              <StatTile label={`Distance (${unit})`} value={formatDistance(distanceMeters, unit)} large />
-              <StatTile label="Duration" value={formatDuration(elapsedSeconds)} large />
-              <StatTile
-                label={`Avg Pace${paceLabel(unit)}`}
-                value={avgPaceSec > 0 ? formatPace(avgPaceSec, unit) : "--:--"}
-              />
-              <StatTile
-                label={`Elevation${unit === "mi" ? " (ft)" : " (m)"}`}
-                value={formatElevation(elevationGain, unit)}
-              />
-            </div>
-
-            {splits.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Splits</p>
-                <div className="space-y-1">
-                  {splits.map((s) => (
-                    <div key={s.km} className="flex justify-between text-sm">
-                      <span className="text-gray-500">{splitLabel(s.km, unit)}</span>
-                      <span className="font-semibold text-[#495057]">
-                        {formatPace(s.pace_sec, unit)}{paceLabel(unit)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+            {gpsError && (
+              <div className="bg-red-50/90 border border-red-200 rounded-2xl px-4 py-3 mb-3">
+                <p className="text-red-600 text-sm">{gpsError}</p>
               </div>
             )}
-
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Notes</p>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="How did it feel?"
-                rows={2}
-                className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm text-[#495057] placeholder:text-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-[#79addc]/40"
-              />
+            <div className="flex justify-center mb-3">
+              <button
+                onClick={toggle}
+                className="text-sm font-semibold text-black/50 uppercase tracking-wider"
+                style={{ textShadow: STAT_SHADOW }}
+              >
+                {unitLabel(unit)}
+              </button>
             </div>
+            <button
+              onClick={handleStart}
+              className="w-full flex items-center justify-center gap-2 rounded-2xl py-4 font-bold text-[#495057] text-lg active:opacity-70 transition-opacity"
+              style={BTN_GLASS}
+            >
+              <Play size={20} />
+              Start Run
+            </button>
+          </div>
 
-            <div className="grid grid-cols-2 gap-3">
+          {/* ── ACTIVE ─────────────────────────────────────────────── */}
+          <div
+            style={{
+              gridArea: "1 / 1",
+              opacity: phase === "active" ? 1 : 0,
+              pointerEvents: phase === "active" ? "auto" : "none",
+              transition: "opacity 0.35s ease",
+            }}
+          >
+            {currentSplitElapsed !== null && (
+              <p className="text-center text-xs font-semibold text-black/50 mb-2"
+                 style={{ textShadow: STAT_SHADOW }}>
+                {splitLabel(currentKmInProgress, unit)} · {formatDuration(currentSplitElapsed)} so far
+              </p>
+            )}
+            <p className="text-center font-black text-black leading-none mb-4"
+               style={{ fontSize: "3.5rem", textShadow: STAT_SHADOW }}>
+              {formatDistance(distanceMeters, unit)}
+              <span className="text-xl font-semibold text-black/40 ml-2">{unit}</span>
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={handlePause}
+                className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-4 font-semibold text-[#495057] active:opacity-70 transition-opacity"
+                style={BTN_GLASS}
+              >
+                <Pause size={18} />
+                Pause
+              </button>
+              <button
+                onClick={handleFinish}
+                className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-4 font-semibold text-white active:opacity-70 transition-opacity"
+                style={{ background: "rgba(73,80,87,0.88)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}
+              >
+                <Square size={18} />
+                Finish
+              </button>
+            </div>
+          </div>
+
+          {/* ── PAUSED ─────────────────────────────────────────────── */}
+          <div
+            style={{
+              gridArea: "1 / 1",
+              opacity: phase === "paused" ? 1 : 0,
+              pointerEvents: phase === "paused" ? "auto" : "none",
+              transition: "opacity 0.35s ease",
+            }}
+          >
+            <p className="text-center text-xs font-semibold text-black/50 uppercase tracking-widest mb-2"
+               style={{ textShadow: STAT_SHADOW }}>
+              Paused
+            </p>
+            <p className="text-center font-black text-black leading-none mb-4"
+               style={{ fontSize: "3.5rem", textShadow: STAT_SHADOW }}>
+              {formatDistance(distanceMeters, unit)}
+              <span className="text-xl font-semibold text-black/40 ml-2">{unit}</span>
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={handleResume}
+                className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-4 font-semibold text-white active:opacity-70 transition-opacity"
+                style={{ background: "rgba(73,80,87,0.88)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}
+              >
+                <Play size={18} />
+                Resume
+              </button>
+              <button
+                onClick={handleFinish}
+                className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-4 font-semibold text-[#495057] active:opacity-70 transition-opacity"
+                style={BTN_GLASS}
+              >
+                <Square size={18} />
+                Finish
+              </button>
+            </div>
+          </div>
+
+          {/* ── SUMMARY ────────────────────────────────────────────── */}
+          <div
+            style={{
+              gridArea: "1 / 1",
+              opacity: phase === "summary" ? 1 : 0,
+              pointerEvents: phase === "summary" ? "auto" : "none",
+              transition: "opacity 0.35s ease",
+            }}
+          >
+            <input
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="How did it feel? (optional note)"
+              className="w-full rounded-2xl px-4 py-3.5 text-sm text-[#495057] placeholder:text-black/35 focus:outline-none mb-3"
+              style={BTN_GLASS}
+            />
+            <div className="flex gap-3">
               <button
                 onClick={handleDiscard}
-                className="flex items-center justify-center gap-2 bg-white/80 border border-gray-200 text-gray-500 font-semibold py-3 rounded-2xl active:opacity-80 transition-opacity shadow-sm"
+                className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-4 font-semibold text-[#495057] active:opacity-70 transition-opacity"
+                style={BTN_GLASS}
               >
                 <RotateCcw size={16} />
                 Discard
@@ -494,48 +487,34 @@ export default function RunPage() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="bg-[#495057]/90 text-white font-bold py-3 rounded-2xl active:opacity-80 transition-opacity disabled:opacity-50"
+                className="flex-1 flex items-center justify-center rounded-2xl py-4 font-bold text-white active:opacity-70 transition-opacity disabled:opacity-50"
+                style={{ background: "rgba(73,80,87,0.88)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}
               >
                 {saving ? "Saving…" : "Save Run"}
               </button>
             </div>
           </div>
+
         </div>
-      )}
+      </div>
 
     </div>
   );
 }
 
-function MapStat({ label, value, shadow }: { label: string; value: string; shadow: string }) {
+function MapStat({ label, value, shadow, large }: { label: string; value: string; shadow: string; large?: boolean }) {
   return (
     <div className="text-center">
-      <p className="text-3xl font-black text-black leading-none" style={{ textShadow: shadow }}>
+      <p
+        className={`${large ? "text-4xl" : "text-3xl"} font-black text-black leading-none`}
+        style={{ textShadow: shadow }}
+      >
         {value}
       </p>
       <p className="text-[11px] font-semibold text-black/55 mt-0.5 uppercase tracking-wider"
          style={{ textShadow: shadow }}>
         {label}
       </p>
-    </div>
-  );
-}
-
-function StatTile({
-  label,
-  value,
-  large,
-}: {
-  label: string;
-  value: string;
-  large?: boolean;
-}) {
-  return (
-    <div className="bg-white rounded-2xl px-4 py-4 border border-white/80 shadow-sm">
-      <p className={`font-bold text-[#495057] leading-none ${large ? "text-3xl" : "text-2xl"}`}>
-        {value}
-      </p>
-      <p className="text-gray-400 text-xs mt-1.5 font-medium">{label}</p>
     </div>
   );
 }
