@@ -303,18 +303,18 @@ export default function RunPage() {
 
       {/* ── FULL-SCREEN RUN VIEW ──────────────────────────────────────────── */}
       {phase !== "ready" && (
-        <div className="fixed inset-0 z-20">
+        <div className="fixed inset-0 z-[60]">
 
-          {/* Map — fills the entire screen */}
-          <div className="absolute inset-0">
+          {/* Map — fills the entire screen, sits below button panels */}
+          <div className="absolute inset-0 z-0">
             <RunMap points={mapPoints} currentPos={currentPos} isLive={phase === "active"} />
           </div>
 
           {/* ── ACTIVE overlay ─────────────────────────────────────────────── */}
           {phase === "active" && (
             <div
-              className="absolute bottom-0 left-0 right-0 max-w-lg mx-auto px-4"
-              style={{ paddingBottom: "calc(4.5rem + env(safe-area-inset-bottom))" }}
+              className="absolute bottom-0 left-0 right-0 max-w-lg mx-auto px-4 z-10"
+              style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))" }}
             >
               <div className="rounded-3xl p-5 space-y-4" style={GLASS}>
                 <div className="grid grid-cols-2 gap-3">
@@ -359,8 +359,8 @@ export default function RunPage() {
           {/* ── PAUSED overlay ──────────────────────────────────────────────── */}
           {phase === "paused" && (
             <div
-              className="absolute bottom-0 left-0 right-0 max-w-lg mx-auto px-4"
-              style={{ paddingBottom: "calc(4.5rem + env(safe-area-inset-bottom))" }}
+              className="absolute bottom-0 left-0 right-0 max-w-lg mx-auto px-4 z-10"
+              style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))" }}
             >
               <div className="rounded-3xl p-5 space-y-4" style={GLASS}>
                 <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
@@ -404,10 +404,10 @@ export default function RunPage() {
           {/* ── SUMMARY overlay (scrollable) ─────────────────────────────── */}
           {phase === "summary" && (
             <div
-              className="absolute inset-x-0 bottom-0 max-w-lg mx-auto px-4 overflow-y-auto"
+              className="absolute inset-x-0 bottom-0 max-w-lg mx-auto px-4 overflow-y-auto z-10"
               style={{
                 maxHeight: "80vh",
-                paddingBottom: "calc(4.5rem + env(safe-area-inset-bottom))",
+                paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))",
               }}
             >
               <div
