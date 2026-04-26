@@ -101,6 +101,7 @@ export default function RunMap({ points, currentPos, isLive }: Props) {
         if (markerRef.current) {
           markerRef.current.setLatLng([currentPos.lat, currentPos.lng]);
         } else {
+          // First GPS fix — always center here regardless of isLive
           markerRef.current = L.circleMarker([currentPos.lat, currentPos.lng], {
             radius: 8,
             color: "#fff",
@@ -108,6 +109,7 @@ export default function RunMap({ points, currentPos, isLive }: Props) {
             fillColor: "#79addc",
             fillOpacity: 1,
           }).addTo(mapRef.current!);
+          mapRef.current?.panTo([currentPos.lat, currentPos.lng]);
         }
         if (isLive) {
           mapRef.current?.panTo([currentPos.lat, currentPos.lng]);
