@@ -28,12 +28,6 @@ type SessionEntry =
 type Filter = "all" | "gym" | "bjj" | "run";
 type View   = "log" | "charts";
 
-const TYPE_COLOR: Record<string, string> = {
-  gym: "#adf7b6",
-  bjj: "#ffc09f",
-  run: "#79addc",
-};
-
 const FILTER_ACTIVE: Record<Filter, { bg: string; text: string }> = {
   all: { bg: "#495057", text: "#ffffff" },
   gym: { bg: "#adf7b6", text: "#495057" },
@@ -92,7 +86,7 @@ function Delta({ current, compare, label }: { current: number; compare: number; 
 
 function ExerciseStatRow({ stat, name }: { stat: ExerciseStat; name: string }) {
   return (
-    <div className="py-5 border-b border-gray-100 last:border-0">
+    <div className="py-5">
       <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-2">{name}</p>
       <div className="flex items-end justify-between">
         <div>
@@ -150,13 +144,19 @@ export default function HistoryPage() {
   const gymEntries = (gym ?? []).map((d) => ({ type: "gym" as const, data: d }));
   const bjjEntries = (bjj ?? []).map((d) => ({ type: "bjj" as const, data: d }));
 
-  const allSessions: SessionEntry[] = [...gymEntries, ...bjjEntries]
+  const gymAEntries = gymEntries
+    .filter((e) => (e.data as WorkoutSession).day === "A")
+    .sort((a, b) => b.data.date.localeCompare(a.data.date));
+  const gymBEntries = gymEntries
+    .filter((e) => (e.data as WorkoutSession).day === "B")
+    .sort((a, b) => b.data.date.localeCompare(a.data.date));
+  const bjjSorted = [...bjjEntries]
     .sort((a, b) => b.data.date.localeCompare(a.data.date));
 
-  const filteredSessions = allSessions.filter((s) => filter === "all" || filter === s.type);
-  const showGym  = (filter === "all" || filter === "gym")  && gymEntries.length > 0;
-  const showBjj  = (filter === "all" || filter === "bjj")  && bjjEntries.length > 0;
-  const showRuns = (filter === "all" || filter === "run")  && runSessions.length > 0;
+  const showGymA = (filter === "all" || filter === "gym") && gymAEntries.length > 0;
+  const showGymB = (filter === "all" || filter === "gym") && gymBEntries.length > 0;
+  const showBjj  = (filter === "all" || filter === "bjj") && bjjSorted.length > 0;
+  const showRuns = (filter === "all" || filter === "run") && runSessions.length > 0;
 
   return (
     <div className="pt-8 pb-6 space-y-6">
@@ -193,12 +193,9 @@ export default function HistoryPage() {
             const allSets = gymSessions.flatMap((s) => s.sets ?? []).filter((w) => !w.isWarmup);
             const ids = [...new Set(allSets.map((w) => w.exerciseId))];
             return (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-1 h-4 rounded-full" style={{ background: "#adf7b6" }} />
-                  <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Gym progress</p>
-                </div>
-                <div>
+              <section className="rounded-3xl p-4" style={{ background: "rgba(173,247,182,0.22)" }}>
+                <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-3">Gym progress</p>
+                <div className="divide-y divide-black/[0.07]">
                   {ids.map((id) => {
                     const name = allSets.find((w) => w.exerciseId === id)?.exerciseName ?? id;
                     const stat = buildExerciseStat(gymSessions, id);
@@ -206,7 +203,7 @@ export default function HistoryPage() {
                     return <ExerciseStatRow key={id} stat={stat} name={name} />;
                   })}
                 </div>
-              </div>
+              </section>
             );
           })()}
         </div>
@@ -231,61 +228,59 @@ export default function HistoryPage() {
           </div>
 
           {loading && <p className="text-gray-400 text-sm">Loading...</p>}
-          {!loading && !showGym && !showBjj && !showRuns && (
+          {!loading && !showGymA && !showGymB && !showBjj && !showRuns && (
             <p className="text-center py-16 text-gray-400 text-sm">No sessions yet.</p>
           )}
 
           {!loading && (
-            <div className="space-y-8">
-              {/* Gym + BJJ sessions — mixed chronologically when "all", or filtered */}
-              {(showGym || showBjj) && filteredSessions.length > 0 && (
-                <div>
-                  {filter === "all" && (
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-1 h-4 rounded-full bg-[#495057]" />
-                      <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Sessions</p>
-                    </div>
-                  )}
-                  {filter === "gym" && (
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-1 h-4 rounded-full" style={{ background: "#adf7b6" }} />
-                      <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Gym</p>
-                    </div>
-                  )}
-                  {filter === "bjj" && (
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-1 h-4 rounded-full" style={{ background: "#ffc09f" }} />
-                      <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">BJJ</p>
-                    </div>
-                  )}
-                  <div className="divide-y divide-gray-100">
-                    {filteredSessions.map((entry) => (
-                      <SessionRow
-                        key={entry.data.id ?? ""}
-                        entry={entry}
-                        expanded={expanded}
-                        setExpanded={setExpanded}
-                      />
+            <div className="space-y-4">
+              {/* Day A — celadon */}
+              {showGymA && (
+                <section className="rounded-3xl p-4" style={{ background: "rgba(173,247,182,0.22)" }}>
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-3">Day A</p>
+                  <div className="divide-y divide-black/[0.07]">
+                    {gymAEntries.map((entry) => (
+                      <SessionRow key={entry.data.id ?? ""} entry={entry} expanded={expanded} setExpanded={setExpanded} />
                     ))}
                   </div>
-                </div>
+                </section>
               )}
 
-              {/* Runs */}
-              {showRuns && (
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-1 h-4 rounded-full" style={{ background: "#79addc" }} />
-                    <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Running</p>
+              {/* Day B — light gold */}
+              {showGymB && (
+                <section className="rounded-3xl p-4" style={{ background: "rgba(255,238,147,0.25)" }}>
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-3">Day B</p>
+                  <div className="divide-y divide-black/[0.07]">
+                    {gymBEntries.map((entry) => (
+                      <SessionRow key={entry.data.id ?? ""} entry={entry} expanded={expanded} setExpanded={setExpanded} />
+                    ))}
                   </div>
-                  <div className="divide-y divide-gray-100">
+                </section>
+              )}
+
+              {/* BJJ — peach */}
+              {showBjj && (
+                <section className="rounded-3xl p-4" style={{ background: "rgba(255,192,159,0.25)" }}>
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-3">BJJ</p>
+                  <div className="divide-y divide-black/[0.07]">
+                    {bjjSorted.map((entry) => (
+                      <SessionRow key={entry.data.id ?? ""} entry={entry} expanded={expanded} setExpanded={setExpanded} />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Run — cool-horizon */}
+              {showRuns && (
+                <section className="rounded-3xl p-4" style={{ background: "rgba(121,173,220,0.22)" }}>
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-3">Running</p>
+                  <div className="divide-y divide-black/[0.07]">
                     {runSessions.map((run) => (
                       <button
                         key={run.id}
                         onClick={() => router.push(`/run/${run.id}`)}
-                        className="w-full flex items-center gap-4 py-4 text-left active:opacity-70 transition-opacity"
+                        className="w-full flex items-center gap-3 py-4 text-left active:opacity-70 transition-opacity"
                       >
-                        <div className="w-1 self-stretch rounded-full flex-shrink-0" style={{ background: TYPE_COLOR.run }} />
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-[#495057] text-sm">
                             {run.distance_meters != null
@@ -304,7 +299,7 @@ export default function HistoryPage() {
                       </button>
                     ))}
                   </div>
-                </div>
+                </section>
               )}
             </div>
           )}
@@ -321,7 +316,6 @@ function SessionRow({ entry, expanded, setExpanded }: {
 }) {
   const id     = entry.data.id ?? "";
   const isOpen = expanded === id;
-  const color  = TYPE_COLOR[entry.type];
 
   const title = entry.type === "gym"
     ? `Day ${(entry.data as WorkoutSession).day}`
@@ -331,9 +325,8 @@ function SessionRow({ entry, expanded, setExpanded }: {
     <div>
       <button
         onClick={() => setExpanded(isOpen ? null : id)}
-        className="w-full flex items-center gap-4 py-4 text-left active:opacity-70 transition-opacity"
+        className="w-full flex items-center gap-3 py-4 text-left active:opacity-70 transition-opacity"
       >
-        <div className="w-1 self-stretch rounded-full flex-shrink-0" style={{ background: color }} />
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-[#495057] text-sm">{title}</p>
           <p className="text-gray-400 text-xs mt-0.5">{entry.data.date}</p>

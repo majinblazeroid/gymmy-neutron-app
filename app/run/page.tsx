@@ -3,8 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import Link from "next/link";
-import { Play, Pause, Square, RotateCcw, Clock } from "lucide-react";
+import { Play, Pause, Square, RotateCcw } from "lucide-react";
 import {
   haversineDistance,
   calcElevationGain,
@@ -275,8 +274,27 @@ export default function RunPage() {
   return (
     <div className="fixed inset-0 z-[60]">
 
-      {/* Map — always full screen */}
-      <div className="absolute inset-0 z-0">
+      {/* Blue background — visible around the clipped map in ready phase */}
+      <div
+        className="absolute inset-0 z-[1]"
+        style={{
+          background: "#79addc",
+          opacity: phase === "ready" ? 1 : 0,
+          transition: "opacity 0.35s ease",
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* Map — clipped to soft rounded rect in ready phase, full screen otherwise */}
+      <div
+        className="absolute inset-0 z-[2]"
+        style={{
+          clipPath: phase === "ready"
+            ? "inset(calc(env(safe-area-inset-top) + 1rem) 1rem calc(env(safe-area-inset-bottom) + 12rem) 1rem round 1.5rem)"
+            : "inset(0 0 0 0 round 0px)",
+          transition: "clip-path 0.35s ease",
+        }}
+      >
         <RunMap points={mapPoints} currentPos={currentPos} isLive={phase === "active"} />
       </div>
 
@@ -321,40 +339,17 @@ export default function RunPage() {
         </div>
       </div>
 
-      {/* TRANSLUCENT NAV — ready phase only, map visible through it */}
+      {/* ── READY controls — bottom bar with peel-through blue tint ── */}
       <div
         className="absolute bottom-0 left-0 right-0 z-10"
         style={{
-          paddingBottom: "env(safe-area-inset-bottom)",
-          background: "rgba(255,255,255,0.18)",
-          backdropFilter: "blur(14px)",
-          WebkitBackdropFilter: "blur(14px)",
-          borderTop: "1px solid rgba(255,255,255,0.25)",
-          opacity: phase === "ready" ? 1 : 0,
-          pointerEvents: phase === "ready" ? "auto" : "none",
-          transition: "opacity 0.35s ease",
-        }}
-      >
-        <div className="max-w-lg mx-auto flex items-center">
-          <Link href="/" className="flex-1 flex flex-col items-center gap-1 py-3">
-            <div className="w-9 h-9 rounded-full flex items-center justify-center -mt-1"
-                 style={{ background: "rgba(73,80,87,0.55)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }}>
-              <span className="text-white text-2xl leading-none font-light">+</span>
-            </div>
-          </Link>
-          <Link href="/history" className="flex-1 flex flex-col items-center gap-1 py-3 text-[#495057]/60">
-            <Clock size={20} strokeWidth={1.5} />
-            <span className="text-xs font-medium">History</span>
-          </Link>
-        </div>
-      </div>
-
-      {/* ── READY controls — sits above the nav ─────────────────────── */}
-      <div
-        className="absolute left-0 right-0 z-10 px-6"
-        style={{
-          bottom: "calc(env(safe-area-inset-bottom) + 64px)",
-          paddingBottom: "1.5rem",
+          paddingBottom: "calc(env(safe-area-inset-bottom) + 1.5rem)",
+          paddingTop: "1.5rem",
+          paddingLeft: "1.5rem",
+          paddingRight: "1.5rem",
+          background: "rgba(121,173,220,0.82)",
+          backdropFilter: "blur(6px)",
+          WebkitBackdropFilter: "blur(6px)",
           opacity: phase === "ready" ? 1 : 0,
           pointerEvents: phase === "ready" ? "auto" : "none",
           transition: "opacity 0.35s ease",
