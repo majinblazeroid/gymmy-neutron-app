@@ -47,7 +47,7 @@ export default function PreWorkout({ day, date, feeling, notes, onChange, onDate
                     {d === "A" ? "Primary lifts" : "Accessory work"}
                   </p>
                 </div>
-                {selected && <div className="ml-auto w-2 h-2 rounded-full bg-[#6c757d] flex-shrink-0" />}
+                {selected && <div className="ml-auto w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#adf7b6" }} />}
               </button>
             );
           })}
@@ -69,7 +69,7 @@ export default function PreWorkout({ day, date, feeling, notes, onChange, onDate
       {/* Feeling — white panel */}
       <section className="bg-white rounded-3xl p-5 space-y-4 shadow-sm border border-gray-100">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">How are you feeling?</p>
-        <FeelingRating value={feeling} onChange={(f) => onChange(day, f, notes)} />
+        <FeelingRating value={feeling} onChange={(f) => onChange(day, f, notes)} color="#adf7b6" />
       </section>
 
       {/* Notes */}
@@ -85,7 +85,8 @@ export default function PreWorkout({ day, date, feeling, notes, onChange, onDate
 
       <button
         onClick={onStart}
-        className="w-full bg-[#6c757d] hover:bg-[#5a6268] text-white rounded-2xl py-5 font-semibold text-base transition-colors shadow-sm"
+        className="w-full rounded-2xl py-5 font-semibold text-base transition-opacity shadow-sm active:opacity-75 text-[#495057]"
+        style={{ background: "#adf7b6" }}
       >
         Start Workout
       </button>

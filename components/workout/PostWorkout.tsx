@@ -48,7 +48,7 @@ export default function PostWorkout({ sets, feeling, notes, onSave }: PostWorkou
       {/* Feeling — white panel */}
       <section className="bg-white rounded-3xl p-5 space-y-4 shadow-sm border border-gray-100">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Post-workout feeling</p>
-        <FeelingRating value={f} onChange={setF} />
+        <FeelingRating value={f} onChange={setF} color="#adf7b6" />
       </section>
 
       {/* Notes */}
@@ -64,7 +64,8 @@ export default function PostWorkout({ sets, feeling, notes, onSave }: PostWorkou
 
       <button
         onClick={() => onSave(f, n)}
-        className="w-full bg-[#6c757d] hover:bg-[#5a6268] text-white rounded-2xl py-5 font-semibold text-base transition-colors shadow-sm"
+        className="w-full rounded-2xl py-5 font-semibold text-base transition-opacity shadow-sm active:opacity-75 text-[#495057]"
+        style={{ background: "#adf7b6" }}
       >
         Save Workout
       </button>

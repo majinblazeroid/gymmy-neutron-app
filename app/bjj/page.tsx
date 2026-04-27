@@ -83,7 +83,7 @@ export default function BJJPage() {
                     {type === "fundamentals" ? "Drilling & technique" : "Live rolling"}
                   </p>
                 </div>
-                {selected && <div className="ml-auto w-2 h-2 rounded-full bg-[#6c757d] flex-shrink-0" />}
+                {selected && <div className="ml-auto w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#ffc09f" }} />}
               </button>
             );
           })}
@@ -152,7 +152,7 @@ export default function BJJPage() {
 
       {/* Intensity */}
       <section className="bg-white rounded-3xl p-5 space-y-4 shadow-sm border border-gray-100">
-        <FeelingRating label="Intensity" value={intensity} onChange={setIntensity} />
+        <FeelingRating label="Intensity" value={intensity} onChange={setIntensity} color="#ffc09f" />
       </section>
 
       {/* Notes */}
@@ -166,7 +166,7 @@ export default function BJJPage() {
         />
       </section>
 
-      <button onClick={save} className="w-full bg-[#6c757d] hover:bg-[#5a6268] text-white rounded-2xl py-5 font-semibold text-base transition-colors shadow-sm">
+      <button onClick={save} className="w-full rounded-2xl py-5 font-semibold text-base transition-opacity shadow-sm active:opacity-75 text-[#495057]" style={{ background: "#ffc09f" }}>
         Save Session
       </button>
     </div>

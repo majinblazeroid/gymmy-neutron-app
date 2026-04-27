@@ -31,6 +31,13 @@ type SessionEntry =
   | { type: "bjj"; data: BJJSession };
 
 type Filter = "all" | "gym" | "bjj" | "run";
+
+const FILTER_ACTIVE: Record<Filter, { bg: string; text: string }> = {
+  all: { bg: "#495057", text: "#ffffff" },
+  gym: { bg: "#adf7b6", text: "#495057" },
+  bjj: { bg: "#ffc09f", text: "#495057" },
+  run: { bg: "#79addc", text: "#495057" },
+};
 type View   = "log" | "charts";
 
 interface ExerciseStat {
@@ -231,10 +238,9 @@ export default function HistoryPage() {
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={cn("px-5 py-2.5 rounded-full text-sm font-semibold capitalize transition-all",
-                  filter === f
-                    ? "bg-[#6c757d] text-white shadow-sm"
-                    : "bg-white text-gray-400 border border-gray-100 shadow-sm")}
+                className={cn("px-5 py-2.5 rounded-full text-sm font-semibold capitalize transition-all shadow-sm",
+                  filter !== f && "bg-white text-gray-400 border border-gray-100")}
+                style={filter === f ? { background: FILTER_ACTIVE[f].bg, color: FILTER_ACTIVE[f].text } : undefined}
               >
                 {f}
               </button>

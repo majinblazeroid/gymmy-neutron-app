@@ -46,10 +46,11 @@ export default function WarmupChecklist({ warmups, onDone }: WarmupChecklistProp
                 className="w-full bg-white rounded-2xl px-5 py-4 flex items-center gap-4 shadow-sm border border-white/80 text-left transition-opacity active:opacity-70"
                 style={{ opacity: done ? 0.55 : 1 }}
               >
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                  done ? "bg-[#6c757d] border-[#6c757d]" : "border-gray-300 bg-white"
-                }`}>
-                  {done && <Check size={11} strokeWidth={3} className="text-white" />}
+                <div
+                  className="w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors"
+                  style={done ? { background: "#adf7b6", borderColor: "#adf7b6" } : { background: "white", borderColor: "#d1d5db" }}
+                >
+                  {done && <Check size={11} strokeWidth={3} className="text-[#495057]" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className={`text-sm font-medium leading-snug ${done ? "line-through text-gray-400" : "text-[#495057]"}`}>
@@ -78,7 +79,8 @@ export default function WarmupChecklist({ warmups, onDone }: WarmupChecklistProp
         </button>
         <button
           onClick={() => onDone(checked.size > 0)}
-          className="flex-1 bg-[#6c757d] hover:bg-[#5a6268] text-white rounded-2xl py-4 font-semibold text-sm transition-colors shadow-sm"
+          className="flex-1 rounded-2xl py-4 font-semibold text-sm transition-opacity shadow-sm active:opacity-75 text-[#495057]"
+          style={{ background: "#adf7b6" }}
         >
           {allDone ? "Done — Start Lifting" : "Continue"}
         </button>
