@@ -21,9 +21,6 @@ interface RunSession {
   distance_meters: number | null;
 }
 
-const RUN_BG     = "rgba(121, 173, 220, 0.18)";
-const RUN_BORDER = "1px solid rgba(121, 173, 220, 0.30)";
-
 export default function Dashboard() {
   const { data } = useSWR<WeekStatus>("/api/workouts/week", fetcher);
   const { data: runs } = useSWR<RunSession[]>("/api/runs", fetcher);
@@ -47,16 +44,15 @@ export default function Dashboard() {
         <p className="text-gray-400 text-sm">{today}</p>
       </div>
 
-      {/* Stats row — always white, no tint */}
-      <div className="grid grid-cols-3 gap-3">
-        <StatChip label="Gym"   value={gymDone} max={2} />
-        <StatChip label="BJJ"   value={weekStatus.bjjCount} />
-        <StatChip label="Total" value={total} />
+      {/* HUD stats */}
+      <div className="flex gap-8">
+        <HudStat label="Gym"   value={gymDone} max={2} />
+        <HudStat label="BJJ"   value={weekStatus.bjjCount} />
+        <HudStat label="Total" value={total} />
       </div>
 
-      {/* Unified action card — all activities together, blue tint */}
-      <div className="rounded-3xl p-5" style={{ background: RUN_BG, border: RUN_BORDER }}>
-
+      {/* Action rows */}
+      <div>
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-5">This week</p>
 
         <div className="flex flex-col gap-4">
@@ -97,19 +93,21 @@ export default function Dashboard() {
             </div>
           </Link>
         </div>
-
       </div>
     </div>
   );
 }
 
-function StatChip({ label, value, max }: { label: string; value: number; max?: number }) {
+function HudStat({ label, value, max }: { label: string; value: number; max?: number }) {
   return (
-    <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
-      <p className="text-2xl font-bold text-[#495057] leading-none">
-        {value}{max && <span className="text-base text-gray-400 font-medium">/{max}</span>}
+    <div>
+      <p className="text-4xl font-black text-[#495057] leading-none">
+        {value}
+        {max !== undefined && (
+          <span className="text-2xl font-semibold text-[#495057]/30">/{max}</span>
+        )}
       </p>
-      <p className="text-gray-500 text-xs mt-1.5 font-medium">{label}</p>
+      <p className="text-[11px] font-semibold text-[#495057]/50 mt-1 uppercase tracking-wider">{label}</p>
     </div>
   );
 }
