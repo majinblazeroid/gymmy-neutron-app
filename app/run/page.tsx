@@ -239,6 +239,15 @@ export default function RunPage() {
     };
   }, [stopWatch, stopInterval, releaseWakeLock]);
 
+  // Set theme-color to blue while on this page
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (!meta) return;
+    const prev = meta.getAttribute("content") ?? "#ffffff";
+    meta.setAttribute("content", "#79addc");
+    return () => { meta.setAttribute("content", prev); };
+  }, []);
+
   // Pre-center map on user's location before run starts
   useEffect(() => {
     if (!navigator.geolocation) return;
@@ -290,7 +299,7 @@ export default function RunPage() {
         style={{
           clipPath: phase === "ready"
             ? "inset(calc(env(safe-area-inset-top) + 1.5rem) 1.5rem calc(env(safe-area-inset-bottom) + 14rem) 1.5rem round 2rem)"
-            : "inset(calc(env(safe-area-inset-top) + 7rem) 1.5rem calc(env(safe-area-inset-bottom) + 12rem) 1.5rem round 2rem)",
+            : "inset(calc(env(safe-area-inset-top) + 7rem) 1.5rem calc(env(safe-area-inset-bottom) + 14rem) 1.5rem round 2rem)",
           transition: "clip-path 0.4s ease",
         }}
       >
@@ -342,7 +351,7 @@ export default function RunPage() {
       <div
         className="absolute bottom-0 left-0 right-0 z-10"
         style={{
-          paddingBottom: "calc(env(safe-area-inset-bottom) + 1.5rem)",
+          paddingBottom: "calc(env(safe-area-inset-bottom) + 4.5rem)",
           paddingTop: "1.5rem",
           paddingLeft: "1.5rem",
           paddingRight: "1.5rem",
@@ -376,27 +385,13 @@ export default function RunPage() {
           <Play size={20} />
           Start Run
         </button>
-
-        {/* Nav row */}
-        <div className="flex items-center justify-around pt-3">
-          <Link href="/" className="flex flex-col items-center gap-1 py-1 opacity-70 active:opacity-40">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center"
-                 style={{ background: "rgba(255,255,255,0.30)" }}>
-              <span className="text-[#495057] text-xl leading-none font-light">+</span>
-            </div>
-          </Link>
-          <Link href="/history" className="flex flex-col items-center gap-1 py-1 text-[#495057]/70 active:opacity-40">
-            <Clock size={20} strokeWidth={1.5} />
-            <span className="text-xs font-medium">History</span>
-          </Link>
-        </div>
       </div>
 
       {/* ── ACTIVE controls ─────────────────────────────────────────── */}
       <div
         className="absolute bottom-0 left-0 right-0 z-10 px-6"
         style={{
-          paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))",
+          paddingBottom: "calc(4.5rem + env(safe-area-inset-bottom))",
           opacity: phase === "active" ? 1 : 0,
           pointerEvents: phase === "active" ? "auto" : "none",
           transition: "opacity 0.35s ease",
@@ -436,7 +431,7 @@ export default function RunPage() {
       <div
         className="absolute bottom-0 left-0 right-0 z-10 px-6"
         style={{
-          paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))",
+          paddingBottom: "calc(4.5rem + env(safe-area-inset-bottom))",
           opacity: phase === "paused" ? 1 : 0,
           pointerEvents: phase === "paused" ? "auto" : "none",
           transition: "opacity 0.35s ease",
@@ -474,7 +469,7 @@ export default function RunPage() {
       <div
         className="absolute bottom-0 left-0 right-0 z-10 px-6"
         style={{
-          paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))",
+          paddingBottom: "calc(4.5rem + env(safe-area-inset-bottom))",
           opacity: phase === "summary" ? 1 : 0,
           pointerEvents: phase === "summary" ? "auto" : "none",
           transition: "opacity 0.35s ease",
@@ -504,6 +499,30 @@ export default function RunPage() {
           >
             {saving ? "Saving…" : "Save Run"}
           </button>
+        </div>
+      </div>
+
+      {/* Persistent nav — always visible, mirrors main Nav with blue tint */}
+      <div
+        className="absolute bottom-0 left-0 right-0 z-[20]"
+        style={{
+          paddingBottom: "env(safe-area-inset-bottom)",
+          background: "rgba(121,173,220,0.55)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          borderTop: "1px solid rgba(255,255,255,0.25)",
+        }}
+      >
+        <div className="max-w-lg mx-auto flex items-center">
+          <Link href="/" className="flex-1 flex flex-col items-center gap-1 py-3 text-xs text-[#495057]/60">
+            <div className="w-9 h-9 rounded-full bg-[#495057] flex items-center justify-center -mt-1">
+              <span className="text-white text-2xl leading-none font-light">+</span>
+            </div>
+          </Link>
+          <Link href="/history" className="flex-1 flex flex-col items-center gap-1 py-3 text-xs text-[#495057]/60">
+            <Clock size={20} strokeWidth={1.5} />
+            <span className="font-medium">History</span>
+          </Link>
         </div>
       </div>
 
