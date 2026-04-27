@@ -14,9 +14,9 @@ export default function Nav() {
       className="fixed bottom-0 left-0 right-0 border-t border-gray-200/50 z-50"
       style={{
         paddingBottom: "env(safe-area-inset-bottom)",
-        background: "rgba(255,255,255,0.75)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
+        background: "rgba(255,255,255,0.20)",
+        backdropFilter: "blur(14px)",
+        WebkitBackdropFilter: "blur(14px)",
       }}
     >
       <div className="max-w-lg mx-auto flex items-center">

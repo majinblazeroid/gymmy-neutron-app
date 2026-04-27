@@ -16,6 +16,11 @@ import { useRunUnit } from "@/lib/useRunUnit";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
+function formatDate(iso: string) {
+  const d = new Date(iso + "T00:00:00");
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
 interface RunSession {
   id: string;
   date: string;
@@ -173,6 +178,8 @@ export default function HistoryPage() {
 
   return (
     <div className="pt-8 pb-6 space-y-8">
+      {/* Amber background — overrides the blue body for this page */}
+      <div className="fixed inset-0 -z-10" style={{ background: "#fef3e2" }} />
 
       <h2 className="text-3xl font-bold text-[#495057] tracking-tight">History</h2>
 
@@ -289,7 +296,7 @@ export default function HistoryPage() {
                             : "Run"}
                         </p>
                         <p className="text-gray-400 text-xs mt-0.5">
-                          {run.date}
+                          {formatDate(run.date)}
                           {run.duration_seconds != null
                             ? ` · ${formatDuration(run.duration_seconds)}`
                             : ""}
@@ -339,7 +346,7 @@ function SessionCard({ entry, expanded, setExpanded }: {
               ? `Day ${(entry.data as WorkoutSession).day}`
               : `BJJ — ${(entry.data as BJJSession).classType}`}
           </p>
-          <p className="text-gray-400 text-xs mt-0.5">{entry.data.date}</p>
+          <p className="text-gray-400 text-xs mt-0.5">{formatDate(entry.data.date)}</p>
         </div>
         {isOpen
           ? <ChevronUp   size={15} className="text-gray-300 flex-shrink-0" />
