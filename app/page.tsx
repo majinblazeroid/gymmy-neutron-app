@@ -40,8 +40,10 @@ export default function Dashboard() {
     : "Track distance & pace";
 
   return (
-    <div className="pt-8 pb-6">
-
+    <div
+      className="flex flex-col pt-8 pb-2"
+      style={{ minHeight: "calc(100dvh - env(safe-area-inset-top) - 6rem - env(safe-area-inset-bottom))" }}
+    >
       {/* Header */}
       <div className="space-y-1 mb-6">
         <h1 className="text-3xl font-bold text-[#495057] tracking-tight">Gymmy Neutron</h1>
@@ -55,15 +57,15 @@ export default function Dashboard() {
         <HudStat label="Total" value={total} />
       </div>
 
-      {/* 2×2 big tile grid */}
-      <div className="grid grid-cols-2 gap-3">
+      {/* 2×2 tile grid — fills remaining height */}
+      <div className="flex-1 grid grid-cols-2 gap-3" style={{ minHeight: 0 }}>
         <BigTile
           href={weekStatus.dayA.done ? "/workout?day=A&view=true" : "/workout?day=A"}
           onClick={!weekStatus.dayA.done ? () => { try { localStorage.removeItem("gymmy_workout_draft"); } catch {} } : undefined}
           label="Day A"
           sublabel={weekStatus.dayA.done ? (weekStatus.dayA.date ? `Done ${weekStatus.dayA.date}` : "Completed") : "Ready to log"}
           icon={<Dumbbell size={34} />}
-          color="#4B7BEC"
+          color="#adf7b6"
           done={weekStatus.dayA.done}
         />
         <BigTile
@@ -72,7 +74,7 @@ export default function Dashboard() {
           label="Day B"
           sublabel={weekStatus.dayB.done ? (weekStatus.dayB.date ? `Done ${weekStatus.dayB.date}` : "Completed") : "Ready to log"}
           icon={<Dumbbell size={34} />}
-          color="#20BF6B"
+          color="#ffee93"
           done={weekStatus.dayB.done}
         />
         <BigTile
@@ -80,14 +82,14 @@ export default function Dashboard() {
           label="BJJ"
           sublabel={weekStatus.bjjCount > 0 ? `${weekStatus.bjjCount} this week` : "Track training"}
           icon={<Shield size={34} />}
-          color="#FC5C65"
+          color="#ffc09f"
         />
         <BigTile
           href="/run"
           label="Run"
           sublabel={lastRunLabel}
           icon={<Activity size={34} />}
-          color="#8854D0"
+          color="#79addc"
         />
       </div>
     </div>
@@ -126,22 +128,28 @@ function BigTile({
   done?: boolean;
 }) {
   return (
-    <Link href={href} onClick={onClick}>
+    <Link href={href} onClick={onClick} className="min-h-0">
       <div
-        className="rounded-3xl aspect-square flex flex-col p-5 transition-opacity active:opacity-75"
+        className="rounded-3xl h-full flex flex-col p-5 transition-opacity active:opacity-75"
         style={{ background: color, opacity: done ? 0.6 : 1 }}
       >
         {/* Icon — upper area */}
-        <div className="flex-1 flex items-center justify-center" style={{ color: "rgba(255,255,255,0.75)" }}>
+        <div className="flex-1 flex items-center justify-center" style={{ color: "rgba(73,80,87,0.35)" }}>
           {icon}
         </div>
 
         {/* Label — lower third, caps */}
         <div>
-          <p className="text-[11px] font-medium uppercase tracking-wider leading-none mb-1.5 truncate" style={{ color: "rgba(255,255,255,0.55)" }}>
-            {done ? "✓ " : ""}{sublabel}
+          {done && (
+            <div className="flex items-center gap-1 mb-1">
+              <CheckCircle size={11} style={{ color: "rgba(73,80,87,0.5)" }} />
+              <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "rgba(73,80,87,0.5)" }}>Done</span>
+            </div>
+          )}
+          <p className="text-[11px] font-medium uppercase tracking-wider leading-none mb-1.5 truncate" style={{ color: "rgba(73,80,87,0.55)" }}>
+            {sublabel}
           </p>
-          <p className="text-xl font-black uppercase tracking-wide leading-none text-white">
+          <p className="text-xl font-black uppercase tracking-wide leading-none" style={{ color: "#495057" }}>
             {label}
           </p>
         </div>
