@@ -21,13 +21,6 @@ interface RunSession {
   distance_meters: number | null;
 }
 
-const CARD = {
-  background: "rgba(255,255,255,0.52)",
-  backdropFilter: "blur(12px)",
-  WebkitBackdropFilter: "blur(12px)",
-  border: "1px solid rgba(255,255,255,0.70)",
-} as const;
-
 export default function Dashboard() {
   const { data } = useSWR<WeekStatus>("/api/workouts/week", fetcher);
   const { data: runs } = useSWR<RunSession[]>("/api/runs", fetcher);
@@ -67,11 +60,11 @@ export default function Dashboard() {
           <DayRow day="B" done={weekStatus.dayB.done} date={weekStatus.dayB.date} />
 
           <Link href="/bjj">
-            <div className="rounded-2xl px-5 py-5 flex items-center justify-between shadow-sm active:opacity-70 transition-opacity" style={CARD}>
+            <div className="bg-white rounded-2xl px-5 py-5 flex items-center justify-between shadow-sm border border-white/80">
               <div className="flex items-center gap-4">
                 <Shield size={18} className="text-gray-400 flex-shrink-0" />
                 <div>
-                  <p className="font-bold text-[#495057] text-base">Log BJJ Session</p>
+                  <p className="font-semibold text-[#495057] text-base">Log BJJ Session</p>
                   <p className="text-gray-400 text-xs mt-0.5">
                     {weekStatus.bjjCount > 0
                       ? `${weekStatus.bjjCount} session${weekStatus.bjjCount !== 1 ? "s" : ""} this week`
@@ -84,11 +77,11 @@ export default function Dashboard() {
           </Link>
 
           <Link href="/run">
-            <div className="rounded-2xl px-5 py-5 flex items-center justify-between shadow-sm active:opacity-70 transition-opacity" style={CARD}>
+            <div className="bg-white rounded-2xl px-5 py-5 flex items-center justify-between shadow-sm border border-white/80 active:opacity-80 transition-opacity">
               <div className="flex items-center gap-4">
                 <Activity size={18} className="text-gray-400 flex-shrink-0" />
                 <div>
-                  <p className="font-bold text-[#495057] text-base">Start a Run</p>
+                  <p className="font-semibold text-[#495057] text-base">Start a Run</p>
                   <p className="text-gray-400 text-xs mt-0.5">
                     {lastRun
                       ? `Last: ${formatDistance(lastRun.distance_meters ?? 0, unit)} ${unit}${lastRun.duration_seconds ? ` · ${formatDuration(lastRun.duration_seconds)}` : ""}`
@@ -123,11 +116,11 @@ function DayRow({ day, done, date }: { day: "A" | "B"; done: boolean; date?: str
   if (done) {
     return (
       <Link href={`/workout?day=${day}&view=true`}>
-        <div className="rounded-2xl px-5 py-5 flex items-center justify-between shadow-sm opacity-55" style={CARD}>
+        <div className="bg-white rounded-2xl px-5 py-5 flex items-center justify-between shadow-sm border border-white/80 opacity-55">
           <div className="flex items-center gap-4">
             <CheckCircle size={18} className="text-green-500 flex-shrink-0" />
             <div>
-              <p className="font-bold text-gray-700 text-base">Day {day}</p>
+              <p className="font-semibold text-gray-700 text-base">Day {day}</p>
               <p className="text-gray-400 text-xs mt-0.5">{date ? `Done ${date}` : "Completed"}</p>
             </div>
           </div>
@@ -142,11 +135,11 @@ function DayRow({ day, done, date }: { day: "A" | "B"; done: boolean; date?: str
       href={`/workout?day=${day}`}
       onClick={() => { try { localStorage.removeItem("gymmy_workout_draft"); } catch {} }}
     >
-      <div className="rounded-2xl px-5 py-5 flex items-center justify-between shadow-sm active:opacity-70 transition-opacity" style={CARD}>
+      <div className="bg-white rounded-2xl px-5 py-5 flex items-center justify-between shadow-sm border border-white/80 active:opacity-80 transition-opacity">
         <div className="flex items-center gap-4">
           <Dumbbell size={18} className="text-gray-400 flex-shrink-0" />
           <div>
-            <p className="font-bold text-[#495057] text-base">Day {day}</p>
+            <p className="font-semibold text-[#495057] text-base">Day {day}</p>
             <p className="text-gray-400 text-xs mt-0.5">Ready to log</p>
           </div>
         </div>
