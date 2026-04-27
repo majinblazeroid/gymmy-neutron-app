@@ -2,7 +2,7 @@
 
 import useSWR from "swr";
 import Link from "next/link";
-import { Dumbbell, Shield, CheckCircle, ChevronRight, Activity } from "lucide-react";
+import { Dumbbell, Shield, CheckCircle, Activity } from "lucide-react";
 import { formatDistance, formatDuration } from "@/lib/runUtils";
 import { useRunUnit } from "@/lib/useRunUnit";
 
@@ -21,9 +21,6 @@ interface RunSession {
   distance_meters: number | null;
 }
 
-const RUN_BG     = "rgba(121, 173, 220, 0.18)";
-const RUN_BORDER = "1px solid rgba(121, 173, 220, 0.30)";
-
 export default function Dashboard() {
   const { data } = useSWR<WeekStatus>("/api/workouts/week", fetcher);
   const { data: runs } = useSWR<RunSession[]>("/api/runs", fetcher);
@@ -38,6 +35,10 @@ export default function Dashboard() {
   const gymDone = (weekStatus.dayA.done ? 1 : 0) + (weekStatus.dayB.done ? 1 : 0);
   const total   = gymDone + weekStatus.bjjCount;
 
+  const lastRunLabel = lastRun
+    ? `Last ${formatDistance(lastRun.distance_meters ?? 0, unit)} ${unit}${lastRun.duration_seconds ? ` · ${formatDuration(lastRun.duration_seconds)}` : ""}`
+    : "Track distance & pace";
+
   return (
     <div className="pt-10 pb-6 space-y-8">
 
@@ -47,105 +48,103 @@ export default function Dashboard() {
         <p className="text-gray-400 text-sm">{today}</p>
       </div>
 
-      {/* Stats row — always white, no tint */}
-      <div className="grid grid-cols-3 gap-3">
-        <StatChip label="Gym"   value={gymDone} max={2} />
-        <StatChip label="BJJ"   value={weekStatus.bjjCount} />
-        <StatChip label="Total" value={total} />
+      {/* HUD stats */}
+      <div className="flex gap-8">
+        <HudStat label="Gym"   value={gymDone} max={2} />
+        <HudStat label="BJJ"   value={weekStatus.bjjCount} />
+        <HudStat label="Total" value={total} />
       </div>
 
-      {/* Unified action card — all activities together, blue tint */}
-      <div className="rounded-3xl p-5" style={{ background: RUN_BG, border: RUN_BORDER }}>
-
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-5">This week</p>
-
-        <div className="flex flex-col gap-4">
-          <DayRow day="A" done={weekStatus.dayA.done} date={weekStatus.dayA.date} />
-          <DayRow day="B" done={weekStatus.dayB.done} date={weekStatus.dayB.date} />
-
-          <Link href="/bjj">
-            <div className="bg-white rounded-2xl px-5 py-5 flex items-center justify-between shadow-sm border border-white/80">
-              <div className="flex items-center gap-4">
-                <Shield size={18} className="text-gray-400 flex-shrink-0" />
-                <div>
-                  <p className="font-semibold text-[#495057] text-base">Log BJJ Session</p>
-                  <p className="text-gray-400 text-xs mt-0.5">
-                    {weekStatus.bjjCount > 0
-                      ? `${weekStatus.bjjCount} session${weekStatus.bjjCount !== 1 ? "s" : ""} this week`
-                      : "Track your training"}
-                  </p>
-                </div>
-              </div>
-              <ChevronRight size={16} className="text-gray-300 flex-shrink-0" />
-            </div>
-          </Link>
-
-          <Link href="/run">
-            <div className="bg-white rounded-2xl px-5 py-5 flex items-center justify-between shadow-sm border border-white/80 active:opacity-80 transition-opacity">
-              <div className="flex items-center gap-4">
-                <Activity size={18} className="text-gray-400 flex-shrink-0" />
-                <div>
-                  <p className="font-semibold text-[#495057] text-base">Start a Run</p>
-                  <p className="text-gray-400 text-xs mt-0.5">
-                    {lastRun
-                      ? `Last: ${formatDistance(lastRun.distance_meters ?? 0, unit)} ${unit}${lastRun.duration_seconds ? ` · ${formatDuration(lastRun.duration_seconds)}` : ""}`
-                      : "Track distance, pace & route"}
-                  </p>
-                </div>
-              </div>
-              <ChevronRight size={16} className="text-gray-300 flex-shrink-0" />
-            </div>
-          </Link>
-        </div>
-
+      {/* 2×2 big tile grid */}
+      <div className="grid grid-cols-2 gap-3">
+        <BigTile
+          href={weekStatus.dayA.done ? "/workout?day=A&view=true" : "/workout?day=A"}
+          onClick={!weekStatus.dayA.done ? () => { try { localStorage.removeItem("gymmy_workout_draft"); } catch {} } : undefined}
+          label="Day A"
+          sublabel={weekStatus.dayA.done ? (weekStatus.dayA.date ? `Done ${weekStatus.dayA.date}` : "Completed") : "Ready to log"}
+          icon={<Dumbbell size={34} />}
+          color="#4E7FA8"
+          done={weekStatus.dayA.done}
+        />
+        <BigTile
+          href={weekStatus.dayB.done ? "/workout?day=B&view=true" : "/workout?day=B"}
+          onClick={!weekStatus.dayB.done ? () => { try { localStorage.removeItem("gymmy_workout_draft"); } catch {} } : undefined}
+          label="Day B"
+          sublabel={weekStatus.dayB.done ? (weekStatus.dayB.date ? `Done ${weekStatus.dayB.date}` : "Completed") : "Ready to log"}
+          icon={<Dumbbell size={34} />}
+          color="#4A9B78"
+          done={weekStatus.dayB.done}
+        />
+        <BigTile
+          href="/bjj"
+          label="BJJ"
+          sublabel={weekStatus.bjjCount > 0 ? `${weekStatus.bjjCount} session${weekStatus.bjjCount !== 1 ? "s" : ""} this week` : "Track your training"}
+          icon={<Shield size={34} />}
+          color="#C4703A"
+        />
+        <BigTile
+          href="/run"
+          label="Run"
+          sublabel={lastRunLabel}
+          icon={<Activity size={34} />}
+          color="#7A5BAF"
+        />
       </div>
     </div>
   );
 }
 
-function StatChip({ label, value, max }: { label: string; value: number; max?: number }) {
+function HudStat({ label, value, max }: { label: string; value: number; max?: number }) {
   return (
-    <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
-      <p className="text-2xl font-bold text-[#495057] leading-none">
-        {value}{max && <span className="text-base text-gray-400 font-medium">/{max}</span>}
+    <div>
+      <p className="text-4xl font-black text-[#495057] leading-none">
+        {value}
+        {max !== undefined && (
+          <span className="text-2xl font-semibold text-[#495057]/30">/{max}</span>
+        )}
       </p>
-      <p className="text-gray-500 text-xs mt-1.5 font-medium">{label}</p>
+      <p className="text-[11px] font-semibold text-[#495057]/50 mt-1 uppercase tracking-wider">{label}</p>
     </div>
   );
 }
 
-function DayRow({ day, done, date }: { day: "A" | "B"; done: boolean; date?: string }) {
-  if (done) {
-    return (
-      <Link href={`/workout?day=${day}&view=true`}>
-        <div className="bg-white rounded-2xl px-5 py-5 flex items-center justify-between shadow-sm border border-white/80 opacity-55">
-          <div className="flex items-center gap-4">
-            <CheckCircle size={18} className="text-green-500 flex-shrink-0" />
-            <div>
-              <p className="font-semibold text-gray-700 text-base">Day {day}</p>
-              <p className="text-gray-400 text-xs mt-0.5">{date ? `Done ${date}` : "Completed"}</p>
-            </div>
-          </div>
-          <span className="text-xs bg-green-50 text-green-600 font-semibold px-3 py-1 rounded-full">Done</span>
-        </div>
-      </Link>
-    );
-  }
-
+function BigTile({
+  href,
+  onClick,
+  label,
+  sublabel,
+  icon,
+  color,
+  done = false,
+}: {
+  href: string;
+  onClick?: () => void;
+  label: string;
+  sublabel: string;
+  icon: React.ReactNode;
+  color: string;
+  done?: boolean;
+}) {
   return (
-    <Link
-      href={`/workout?day=${day}`}
-      onClick={() => { try { localStorage.removeItem("gymmy_workout_draft"); } catch {} }}
-    >
-      <div className="bg-white rounded-2xl px-5 py-5 flex items-center justify-between shadow-sm border border-white/80 active:opacity-80 transition-opacity">
-        <div className="flex items-center gap-4">
-          <Dumbbell size={18} className="text-gray-400 flex-shrink-0" />
-          <div>
-            <p className="font-semibold text-[#495057] text-base">Day {day}</p>
-            <p className="text-gray-400 text-xs mt-0.5">Ready to log</p>
-          </div>
+    <Link href={href} onClick={onClick}>
+      <div
+        className="rounded-3xl aspect-square flex flex-col p-5 transition-opacity active:opacity-75"
+        style={{ background: color, opacity: done ? 0.6 : 1 }}
+      >
+        {/* Icon — upper area */}
+        <div className="flex-1 flex items-center justify-center" style={{ color: "rgba(255,255,255,0.75)" }}>
+          {icon}
         </div>
-        <ChevronRight size={16} className="text-gray-300 flex-shrink-0" />
+
+        {/* Label — lower third, caps */}
+        <div>
+          <p className="text-[11px] font-medium uppercase tracking-wider leading-none mb-1.5" style={{ color: "rgba(255,255,255,0.55)" }}>
+            {done ? "✓ " : ""}{sublabel}
+          </p>
+          <p className="text-xl font-black uppercase tracking-wide leading-none text-white">
+            {label}
+          </p>
+        </div>
       </div>
     </Link>
   );
