@@ -40,16 +40,16 @@ export default function Dashboard() {
     : "Track distance & pace";
 
   return (
-    <div className="pt-10 pb-6 space-y-8">
+    <div className="pt-8 pb-6">
 
       {/* Header */}
-      <div className="space-y-1">
+      <div className="space-y-1 mb-6">
         <h1 className="text-3xl font-bold text-[#495057] tracking-tight">Gymmy Neutron</h1>
         <p className="text-gray-400 text-sm">{today}</p>
       </div>
 
       {/* HUD stats */}
-      <div className="flex gap-8">
+      <div className="flex gap-8 mb-6">
         <HudStat label="Gym"   value={gymDone} max={2} />
         <HudStat label="BJJ"   value={weekStatus.bjjCount} />
         <HudStat label="Total" value={total} />
@@ -63,7 +63,7 @@ export default function Dashboard() {
           label="Day A"
           sublabel={weekStatus.dayA.done ? (weekStatus.dayA.date ? `Done ${weekStatus.dayA.date}` : "Completed") : "Ready to log"}
           icon={<Dumbbell size={34} />}
-          color="#4E7FA8"
+          color="#4B7BEC"
           done={weekStatus.dayA.done}
         />
         <BigTile
@@ -72,22 +72,22 @@ export default function Dashboard() {
           label="Day B"
           sublabel={weekStatus.dayB.done ? (weekStatus.dayB.date ? `Done ${weekStatus.dayB.date}` : "Completed") : "Ready to log"}
           icon={<Dumbbell size={34} />}
-          color="#4A9B78"
+          color="#20BF6B"
           done={weekStatus.dayB.done}
         />
         <BigTile
           href="/bjj"
           label="BJJ"
-          sublabel={weekStatus.bjjCount > 0 ? `${weekStatus.bjjCount} session${weekStatus.bjjCount !== 1 ? "s" : ""} this week` : "Track your training"}
+          sublabel={weekStatus.bjjCount > 0 ? `${weekStatus.bjjCount} this week` : "Track training"}
           icon={<Shield size={34} />}
-          color="#C4703A"
+          color="#FC5C65"
         />
         <BigTile
           href="/run"
           label="Run"
           sublabel={lastRunLabel}
           icon={<Activity size={34} />}
-          color="#7A5BAF"
+          color="#8854D0"
         />
       </div>
     </div>
@@ -138,7 +138,7 @@ function BigTile({
 
         {/* Label — lower third, caps */}
         <div>
-          <p className="text-[11px] font-medium uppercase tracking-wider leading-none mb-1.5" style={{ color: "rgba(255,255,255,0.55)" }}>
+          <p className="text-[11px] font-medium uppercase tracking-wider leading-none mb-1.5 truncate" style={{ color: "rgba(255,255,255,0.55)" }}>
             {done ? "✓ " : ""}{sublabel}
           </p>
           <p className="text-xl font-black uppercase tracking-wide leading-none text-white">
