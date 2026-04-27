@@ -280,7 +280,6 @@ export default function RunPage() {
         className="absolute inset-0 z-[1]"
         style={{
           background: "#79addc",
-          opacity: phase === "ready" ? 1 : 0,
           pointerEvents: "none",
         }}
       />
@@ -291,8 +290,8 @@ export default function RunPage() {
         style={{
           clipPath: phase === "ready"
             ? "inset(calc(env(safe-area-inset-top) + 1.5rem) 1.5rem calc(env(safe-area-inset-bottom) + 14rem) 1.5rem round 2rem)"
-            : "inset(0 0 0 0 round 0px)",
-          transition: "clip-path 0.35s ease",
+            : "inset(calc(env(safe-area-inset-top) + 7rem) 1.5rem calc(env(safe-area-inset-bottom) + 12rem) 1.5rem round 2rem)",
+          transition: "clip-path 0.4s ease",
         }}
       >
         <RunMap points={mapPoints} currentPos={currentPos} isLive={phase === "active"} />
@@ -304,7 +303,7 @@ export default function RunPage() {
       <div
         className="absolute top-0 left-0 right-0 z-10 flex justify-center px-6"
         style={{
-          paddingTop: "calc(env(safe-area-inset-top) + 4.5rem)",
+          paddingTop: "calc(env(safe-area-inset-top) + 1.5rem)",
           opacity: phase === "active" || phase === "paused" ? 1 : 0,
           transition: "opacity 0.35s ease",
           pointerEvents: "none",
@@ -323,7 +322,7 @@ export default function RunPage() {
       <div
         className="absolute top-0 left-0 right-0 z-10 flex justify-center px-6"
         style={{
-          paddingTop: "calc(env(safe-area-inset-top) + 4.5rem)",
+          paddingTop: "calc(env(safe-area-inset-top) + 1.5rem)",
           opacity: phase === "summary" ? 1 : 0,
           transition: "opacity 0.35s ease",
           pointerEvents: "none",
@@ -404,15 +403,14 @@ export default function RunPage() {
         }}
       >
         {currentSplitElapsed !== null && (
-          <p className="text-center text-xs font-semibold text-black/50 mb-2"
-             style={{ textShadow: STAT_SHADOW }}>
+          <p className="text-center text-xs font-semibold text-[#495057]/60 mb-2">
             {splitLabel(currentKmInProgress, unit)} · {formatDuration(currentSplitElapsed)} so far
           </p>
         )}
-        <p className="text-center font-black text-black leading-none mb-4"
-           style={{ fontSize: "3.5rem", textShadow: STAT_SHADOW }}>
+        <p className="text-center font-black text-[#495057] leading-none mb-4"
+           style={{ fontSize: "3.5rem" }}>
           {formatDistance(distanceMeters, unit)}
-          <span className="text-xl font-semibold text-black/40 ml-2">{unit}</span>
+          <span className="text-xl font-semibold text-[#495057]/40 ml-2">{unit}</span>
         </p>
         <div className="flex gap-3">
           <button
@@ -444,14 +442,13 @@ export default function RunPage() {
           transition: "opacity 0.35s ease",
         }}
       >
-        <p className="text-center text-xs font-semibold text-black/50 uppercase tracking-widest mb-2"
-           style={{ textShadow: STAT_SHADOW }}>
+        <p className="text-center text-xs font-semibold text-[#495057]/60 uppercase tracking-widest mb-2">
           Paused
         </p>
-        <p className="text-center font-black text-black leading-none mb-4"
-           style={{ fontSize: "3.5rem", textShadow: STAT_SHADOW }}>
+        <p className="text-center font-black text-[#495057] leading-none mb-4"
+           style={{ fontSize: "3.5rem" }}>
           {formatDistance(distanceMeters, unit)}
-          <span className="text-xl font-semibold text-black/40 ml-2">{unit}</span>
+          <span className="text-xl font-semibold text-[#495057]/40 ml-2">{unit}</span>
         </p>
         <div className="flex gap-3">
           <button
