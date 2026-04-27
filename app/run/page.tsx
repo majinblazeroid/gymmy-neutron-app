@@ -299,6 +299,8 @@ export default function RunPage() {
         style={{
           clipPath: phase === "ready"
             ? "inset(calc(env(safe-area-inset-top) + 1.5rem) 1.5rem calc(env(safe-area-inset-bottom) + 14rem) 1.5rem round 2rem)"
+            : phase === "summary"
+            ? "inset(calc(env(safe-area-inset-top) + 10.5rem) 1.5rem calc(env(safe-area-inset-bottom) + 14rem) 1.5rem round 2rem)"
             : "inset(calc(env(safe-area-inset-top) + 7rem) 1.5rem calc(env(safe-area-inset-bottom) + 14rem) 1.5rem round 2rem)",
           transition: "clip-path 0.4s ease",
         }}
@@ -507,10 +509,10 @@ export default function RunPage() {
         className="absolute bottom-0 left-0 right-0 z-[20]"
         style={{
           paddingBottom: "env(safe-area-inset-bottom)",
-          background: "rgba(121,173,220,0.55)",
+          background: "rgba(255,255,255,0.22)",
           backdropFilter: "blur(12px)",
           WebkitBackdropFilter: "blur(12px)",
-          borderTop: "1px solid rgba(255,255,255,0.25)",
+          borderTop: "1px solid rgba(255,255,255,0.30)",
         }}
       >
         <div className="max-w-lg mx-auto flex items-center">
