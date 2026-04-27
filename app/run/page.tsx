@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { Play, Pause, Square, RotateCcw } from "lucide-react";
+import Link from "next/link";
+import { Play, Pause, Square, RotateCcw, Clock } from "lucide-react";
 import {
   haversineDistance,
   calcElevationGain,
@@ -280,7 +281,6 @@ export default function RunPage() {
         style={{
           background: "#79addc",
           opacity: phase === "ready" ? 1 : 0,
-          transition: "opacity 0.35s ease",
           pointerEvents: "none",
         }}
       />
@@ -290,7 +290,7 @@ export default function RunPage() {
         className="absolute inset-0 z-[2]"
         style={{
           clipPath: phase === "ready"
-            ? "inset(calc(env(safe-area-inset-top) + 1rem) 1rem calc(env(safe-area-inset-bottom) + 12rem) 1rem round 1.5rem)"
+            ? "inset(calc(env(safe-area-inset-top) + 1.5rem) 1.5rem calc(env(safe-area-inset-bottom) + 14rem) 1.5rem round 2rem)"
             : "inset(0 0 0 0 round 0px)",
           transition: "clip-path 0.35s ease",
         }}
@@ -377,6 +377,20 @@ export default function RunPage() {
           <Play size={20} />
           Start Run
         </button>
+
+        {/* Nav row */}
+        <div className="flex items-center justify-around pt-3">
+          <Link href="/" className="flex flex-col items-center gap-1 py-1 opacity-70 active:opacity-40">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center"
+                 style={{ background: "rgba(255,255,255,0.30)" }}>
+              <span className="text-[#495057] text-xl leading-none font-light">+</span>
+            </div>
+          </Link>
+          <Link href="/history" className="flex flex-col items-center gap-1 py-1 text-[#495057]/70 active:opacity-40">
+            <Clock size={20} strokeWidth={1.5} />
+            <span className="text-xs font-medium">History</span>
+          </Link>
+        </div>
       </div>
 
       {/* ── ACTIVE controls ─────────────────────────────────────────── */}
