@@ -311,12 +311,10 @@ export default function RunPage() {
           pointerEvents: "none",
         }}
       >
-        <div style={FROSTED_STRIP}>
-          <div className="flex items-start gap-8">
-            <MapStat label={`Pace ${paceLabel(unit)}`} value={avgPaceSec > 0 ? formatPace(avgPaceSec, unit) : "--:--"} shadow={STAT_SHADOW} />
-            <MapStat label="Duration" value={formatDuration(elapsedSeconds)} shadow={STAT_SHADOW} />
-            <MapStat label={unit === "mi" ? "Elev (ft)" : "Elev (m)"} value={formatElevation(elevationGain, unit)} shadow={STAT_SHADOW} />
-          </div>
+        <div className="flex items-start gap-8">
+          <MapStat label={`Pace ${paceLabel(unit)}`} value={avgPaceSec > 0 ? formatPace(avgPaceSec, unit) : "--:--"} shadow={STAT_SHADOW} />
+          <MapStat label="Duration" value={formatDuration(elapsedSeconds)} shadow={STAT_SHADOW} />
+          <MapStat label={unit === "mi" ? "Elev (ft)" : "Elev (m)"} value={formatElevation(elevationGain, unit)} shadow={STAT_SHADOW} />
         </div>
       </div>
 
@@ -330,13 +328,11 @@ export default function RunPage() {
           pointerEvents: "none",
         }}
       >
-        <div style={FROSTED_STRIP}>
-          <div className="grid grid-cols-2 gap-x-10 gap-y-4">
-            <MapStat label={`Distance (${unit})`} value={formatDistance(distanceMeters, unit)} shadow={STAT_SHADOW} large />
-            <MapStat label="Duration" value={formatDuration(elapsedSeconds)} shadow={STAT_SHADOW} large />
-            <MapStat label={`Avg Pace${paceLabel(unit)}`} value={avgPaceSec > 0 ? formatPace(avgPaceSec, unit) : "--:--"} shadow={STAT_SHADOW} />
-            <MapStat label={unit === "mi" ? "Elev (ft)" : "Elev (m)"} value={formatElevation(elevationGain, unit)} shadow={STAT_SHADOW} />
-          </div>
+        <div className="grid grid-cols-2 gap-x-10 gap-y-4">
+          <MapStat label={`Distance (${unit})`} value={formatDistance(distanceMeters, unit)} shadow={STAT_SHADOW} large />
+          <MapStat label="Duration" value={formatDuration(elapsedSeconds)} shadow={STAT_SHADOW} large />
+          <MapStat label={`Avg Pace${paceLabel(unit)}`} value={avgPaceSec > 0 ? formatPace(avgPaceSec, unit) : "--:--"} shadow={STAT_SHADOW} />
+          <MapStat label={unit === "mi" ? "Elev (ft)" : "Elev (m)"} value={formatElevation(elevationGain, unit)} shadow={STAT_SHADOW} />
         </div>
       </div>
 
@@ -529,13 +525,11 @@ function MapStat({ label, value, shadow, large }: { label: string; value: string
   return (
     <div className="text-center">
       <p
-        className={`${large ? "text-4xl" : "text-3xl"} font-black text-black leading-none`}
-        style={{ textShadow: shadow }}
+        className={`${large ? "text-4xl" : "text-3xl"} font-black text-[#495057] leading-none`}
       >
         {value}
       </p>
-      <p className="text-[11px] font-semibold text-black/55 mt-0.5 uppercase tracking-wider"
-         style={{ textShadow: shadow }}>
+      <p className="text-[11px] font-semibold text-[#495057]/60 mt-0.5 uppercase tracking-wider">
         {label}
       </p>
     </div>
