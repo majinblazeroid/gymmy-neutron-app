@@ -239,15 +239,6 @@ export default function RunPage() {
     };
   }, [stopWatch, stopInterval, releaseWakeLock]);
 
-  // Set theme-color to blue while on this page
-  useEffect(() => {
-    const meta = document.querySelector('meta[name="theme-color"]');
-    if (!meta) return;
-    const prev = meta.getAttribute("content") ?? "#ffffff";
-    meta.setAttribute("content", "#79addc");
-    return () => { meta.setAttribute("content", prev); };
-  }, []);
-
   // Pre-center map on user's location before run starts
   useEffect(() => {
     if (!navigator.geolocation) return;
@@ -349,43 +340,33 @@ export default function RunPage() {
         </div>
       </div>
 
-      {/* ── READY controls — bottom bar with peel-through blue tint ── */}
+      {/* ── READY controls — minimal text, no panel ── */}
       <div
-        className="absolute bottom-0 left-0 right-0 z-10"
+        className="absolute left-0 right-0 z-10 px-8 flex flex-col items-center justify-between"
         style={{
-          paddingBottom: "calc(env(safe-area-inset-bottom) + 4.5rem)",
-          paddingTop: "1.5rem",
-          paddingLeft: "1.5rem",
-          paddingRight: "1.5rem",
-          background: "rgba(121,173,220,0.82)",
-          backdropFilter: "blur(6px)",
-          WebkitBackdropFilter: "blur(6px)",
+          bottom: "calc(env(safe-area-inset-bottom) + 4rem)",
+          height: "9.5rem",
+          paddingTop: "1rem",
+          paddingBottom: "0.5rem",
           opacity: phase === "ready" ? 1 : 0,
           pointerEvents: phase === "ready" ? "auto" : "none",
           transition: "opacity 0.35s ease",
         }}
       >
+        <button onClick={toggle} className="active:opacity-50 transition-opacity">
+          <span className="text-xs font-bold text-[#495057]/70 uppercase tracking-widest">
+            {unit === "mi" ? "MI" : "KM"}
+          </span>
+        </button>
+
         {gpsError && (
-          <div className="bg-red-50/90 border border-red-200 rounded-2xl px-4 py-3 mb-3">
-            <p className="text-red-600 text-sm">{gpsError}</p>
+          <div className="bg-red-50/90 border border-red-200 rounded-2xl px-4 py-2 w-full">
+            <p className="text-red-600 text-xs text-center">{gpsError}</p>
           </div>
         )}
-        <div className="flex justify-center mb-3">
-          <button
-            onClick={toggle}
-            className="rounded-xl px-4 py-2 text-sm font-semibold text-[#495057] uppercase tracking-wider active:opacity-70 transition-opacity"
-            style={BTN_GLASS}
-          >
-            {unitLabel(unit)}
-          </button>
-        </div>
-        <button
-          onClick={handleStart}
-          className="w-full flex items-center justify-center gap-2 rounded-2xl py-4 font-bold text-[#495057] text-lg active:opacity-70 transition-opacity"
-          style={BTN_GLASS}
-        >
-          <Play size={20} />
-          Start Run
+
+        <button onClick={handleStart} className="active:opacity-50 transition-opacity">
+          <span className="text-5xl font-black text-[#495057] tracking-tight uppercase">Start</span>
         </button>
       </div>
 
