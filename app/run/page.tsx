@@ -342,11 +342,11 @@ export default function RunPage() {
 
       {/* ── READY controls — minimal text, no panel ── */}
 
-      {/* KM/MI — just below the map */}
+      {/* KM/MI — overlaid on the map, near its bottom edge */}
       <div
         className="absolute left-0 right-0 z-10 flex justify-center"
         style={{
-          bottom: "calc(env(safe-area-inset-bottom) + 12rem)",
+          bottom: "calc(env(safe-area-inset-bottom) + 15rem)",
           opacity: phase === "ready" ? 1 : 0,
           pointerEvents: phase === "ready" ? "auto" : "none",
           transition: "opacity 0.35s ease",
