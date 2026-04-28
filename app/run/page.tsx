@@ -341,32 +341,44 @@ export default function RunPage() {
       </div>
 
       {/* ── READY controls — minimal text, no panel ── */}
+
+      {/* KM/MI — just below the map */}
       <div
-        className="absolute left-0 right-0 z-10 px-8 flex flex-col items-center justify-between"
+        className="absolute left-0 right-0 z-10 flex justify-center"
         style={{
-          bottom: "calc(env(safe-area-inset-bottom) + 4rem)",
-          height: "9.5rem",
-          paddingTop: "1rem",
-          paddingBottom: "0.5rem",
+          bottom: "calc(env(safe-area-inset-bottom) + 12rem)",
           opacity: phase === "ready" ? 1 : 0,
           pointerEvents: phase === "ready" ? "auto" : "none",
           transition: "opacity 0.35s ease",
         }}
       >
-        <button onClick={toggle} className="active:opacity-50 transition-opacity">
+        <button onClick={toggle} className="active:opacity-50 transition-opacity py-2 px-4">
           <span className="text-xs font-bold text-[#495057]/70 uppercase tracking-widest">
             {unit === "mi" ? "MI" : "KM"}
           </span>
         </button>
+      </div>
 
-        {gpsError && (
-          <div className="bg-red-50/90 border border-red-200 rounded-2xl px-4 py-2 w-full">
-            <p className="text-red-600 text-xs text-center">{gpsError}</p>
-          </div>
-        )}
+      {/* GPS error */}
+      {gpsError && phase === "ready" && (
+        <div className="absolute left-6 right-6 z-10 bg-red-50/90 border border-red-200 rounded-2xl px-4 py-2"
+             style={{ bottom: "calc(env(safe-area-inset-bottom) + 8.5rem)" }}>
+          <p className="text-red-600 text-xs text-center">{gpsError}</p>
+        </div>
+      )}
 
-        <button onClick={handleStart} className="active:opacity-50 transition-opacity">
-          <span className="text-5xl font-black text-[#495057] tracking-tight uppercase">Start</span>
+      {/* START — centre of blue area */}
+      <div
+        className="absolute left-0 right-0 z-10 flex justify-center"
+        style={{
+          bottom: "calc(env(safe-area-inset-bottom) + 6rem)",
+          opacity: phase === "ready" ? 1 : 0,
+          pointerEvents: phase === "ready" ? "auto" : "none",
+          transition: "opacity 0.35s ease",
+        }}
+      >
+        <button onClick={handleStart} className="active:opacity-50 transition-opacity py-2 px-6">
+          <span className="text-5xl font-black text-[#495057] tracking-tight">Start</span>
         </button>
       </div>
 
