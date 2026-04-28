@@ -289,7 +289,7 @@ export default function RunPage() {
         className="absolute inset-0 z-[2]"
         style={{
           clipPath: phase === "ready"
-            ? "inset(calc(env(safe-area-inset-top) + 1.5rem) 1.5rem calc(env(safe-area-inset-bottom) + 14rem) 1.5rem round 2rem)"
+            ? "inset(calc(env(safe-area-inset-top) + 4rem) 1.5rem calc(env(safe-area-inset-bottom) + 10rem) 1.5rem round 2rem)"
             : phase === "summary"
             ? "inset(calc(env(safe-area-inset-top) + 10.5rem) 1.5rem calc(env(safe-area-inset-bottom) + 14rem) 1.5rem round 2rem)"
             : "inset(calc(env(safe-area-inset-top) + 7rem) 1.5rem calc(env(safe-area-inset-bottom) + 14rem) 1.5rem round 2rem)",
@@ -342,11 +342,11 @@ export default function RunPage() {
 
       {/* ── READY controls — minimal text, no panel ── */}
 
-      {/* KM/MI — overlaid on the map, near its bottom edge */}
+      {/* KM/MI — blue strip above the map */}
       <div
         className="absolute left-0 right-0 z-10 flex justify-center"
         style={{
-          bottom: "calc(env(safe-area-inset-bottom) + 15rem)",
+          top: "calc(env(safe-area-inset-top) + 1rem)",
           opacity: phase === "ready" ? 1 : 0,
           pointerEvents: phase === "ready" ? "auto" : "none",
           transition: "opacity 0.35s ease",
@@ -367,11 +367,11 @@ export default function RunPage() {
         </div>
       )}
 
-      {/* START — centre of blue area */}
+      {/* Start — blue strip below the map */}
       <div
         className="absolute left-0 right-0 z-10 flex justify-center"
         style={{
-          bottom: "calc(env(safe-area-inset-bottom) + 6rem)",
+          bottom: "calc(env(safe-area-inset-bottom) + 5rem)",
           opacity: phase === "ready" ? 1 : 0,
           pointerEvents: phase === "ready" ? "auto" : "none",
           transition: "opacity 0.35s ease",
