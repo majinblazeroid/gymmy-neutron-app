@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error || !data) {
+    console.error("run save error:", error);
     return NextResponse.json({ error: error?.message }, { status: 500 });
   }
 

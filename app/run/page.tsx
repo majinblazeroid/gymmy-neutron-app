@@ -42,6 +42,7 @@ export default function RunPage() {
   const [startedAt, setStartedAt] = useState<string | null>(null);
   const [gpsError, setGpsError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const watchIdRef = useRef<number | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -100,7 +101,7 @@ export default function RunPage() {
         // elevation
         if (alt !== null && lastPointRef.current.alt !== null) {
           const delta = alt - (lastPointRef.current.alt as number);
-          if (delta > 0) {
+          if (delta >= 2) {
             elevationRef.current += delta;
             elevationAvailableRef.current = true;
           }
@@ -190,7 +191,7 @@ export default function RunPage() {
       started_at: startedAt,
       duration_seconds: elapsedSeconds,
       distance_meters: distanceMeters,
-      elevation_gain_meters: elevationAvailableRef.current ? elevationGain : null,
+      elevation_gain_meters: calcElevationGain(routePoints),
       avg_pace_sec_per_km: avgPaceSec > 0 ? avgPaceSec : null,
       splits: finalSplits,
       notes: notes.trim() || null,
@@ -206,12 +207,15 @@ export default function RunPage() {
       if (res.ok) {
         router.push("/history");
       } else {
+        const json = await res.json().catch(() => ({}));
+        setSaveError((json as { error?: string }).error ?? "Save failed. Check your connection and try again.");
         setSaving(false);
       }
     } catch {
+      setSaveError("Save failed. Check your connection and try again.");
       setSaving(false);
     }
-  }, [avgPaceSec, distanceMeters, elevationGain, elapsedSeconds, notes, routePoints, router, startedAt]);
+  }, [avgPaceSec, distanceMeters, elapsedSeconds, notes, routePoints, router, startedAt]);
 
   const handleDiscard = useCallback(() => {
     setPhase("ready");
@@ -223,6 +227,7 @@ export default function RunPage() {
     setCurrentPos(null);
     setNotes("");
     setStartedAt(null);
+    setSaveError(null);
     distanceRef.current = 0;
     elevationRef.current = 0;
     elevationAvailableRef.current = false;
@@ -473,6 +478,9 @@ export default function RunPage() {
           className="w-full rounded-2xl px-4 py-3.5 text-sm text-[#495057] placeholder:text-black/35 focus:outline-none mb-3"
           style={BTN_GLASS}
         />
+        {saveError && (
+          <p className="text-red-500 text-xs text-center mb-2">{saveError}</p>
+        )}
         <div className="flex gap-3">
           <button
             onClick={handleDiscard}

@@ -16,6 +16,7 @@ export default function RunMap({ points, currentPos, isLive }: Props) {
   const markerRef = useRef<L.CircleMarker | null>(null);
   const onTouchStartRef = useRef<((e: TouchEvent) => void) | null>(null);
   const onTouchEndRef = useRef<(() => void) | null>(null);
+  const lRef = useRef<typeof import("leaflet") | null>(null);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -62,6 +63,7 @@ export default function RunMap({ points, currentPos, isLive }: Props) {
       }
 
       mapRef.current = map;
+      lRef.current = L;
 
       // Two-finger drag: enable dragging only when 2+ touches detected
       const el = containerRef.current!;
@@ -84,6 +86,7 @@ export default function RunMap({ points, currentPos, isLive }: Props) {
       }
       mapRef.current?.remove();
       mapRef.current = null;
+      lRef.current = null;
       polylineRef.current = null;
       markerRef.current = null;
     };
@@ -91,31 +94,29 @@ export default function RunMap({ points, currentPos, isLive }: Props) {
   }, []);
 
   useEffect(() => {
-    if (!mapRef.current) return;
-    import("leaflet").then((L) => {
-      const latlngs = points.map((p) => [p.lat, p.lng] as [number, number]);
-      if (polylineRef.current) {
-        polylineRef.current.setLatLngs(latlngs);
+    const L = lRef.current;
+    if (!mapRef.current || !L) return;
+    const latlngs = points.map((p) => [p.lat, p.lng] as [number, number]);
+    if (polylineRef.current) {
+      polylineRef.current.setLatLngs(latlngs);
+    }
+    if (currentPos) {
+      if (markerRef.current) {
+        markerRef.current.setLatLng([currentPos.lat, currentPos.lng]);
+      } else {
+        markerRef.current = L.circleMarker([currentPos.lat, currentPos.lng], {
+          radius: 8,
+          color: "#fff",
+          weight: 2,
+          fillColor: "#79addc",
+          fillOpacity: 1,
+        }).addTo(mapRef.current);
+        mapRef.current.panTo([currentPos.lat, currentPos.lng]);
       }
-      if (currentPos) {
-        if (markerRef.current) {
-          markerRef.current.setLatLng([currentPos.lat, currentPos.lng]);
-        } else {
-          // First GPS fix — always center here regardless of isLive
-          markerRef.current = L.circleMarker([currentPos.lat, currentPos.lng], {
-            radius: 8,
-            color: "#fff",
-            weight: 2,
-            fillColor: "#79addc",
-            fillOpacity: 1,
-          }).addTo(mapRef.current!);
-          mapRef.current?.panTo([currentPos.lat, currentPos.lng]);
-        }
-        if (isLive) {
-          mapRef.current?.panTo([currentPos.lat, currentPos.lng]);
-        }
+      if (isLive) {
+        mapRef.current.panTo([currentPos.lat, currentPos.lng]);
       }
-    });
+    }
   }, [points, currentPos, isLive]);
 
   return (

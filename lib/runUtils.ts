@@ -34,7 +34,7 @@ export function calcElevationGain(points: GpsPoint[]): number | null {
   let gain = 0;
   for (let i = 1; i < withAlt.length; i++) {
     const delta = (withAlt[i].alt as number) - (withAlt[i - 1].alt as number);
-    if (delta > 0) gain += delta;
+    if (delta >= 2) gain += delta;
   }
   return Math.round(gain);
 }
