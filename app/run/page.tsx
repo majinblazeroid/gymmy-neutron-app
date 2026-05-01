@@ -16,6 +16,7 @@ import {
   unitLabel,
   paceLabel,
   splitLabel,
+  KalmanFilter1D,
   type GpsPoint,
   type Split,
 } from "@/lib/runUtils";
@@ -43,6 +44,7 @@ export default function RunPage() {
   const [gpsError, setGpsError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [currentPace, setCurrentPace] = useState(0); // sec/km, 30-sec rolling window
 
   const watchIdRef = useRef<number | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -54,6 +56,9 @@ export default function RunPage() {
   const splitsRef = useRef<Split[]>([]);
   const splitStartTimeRef = useRef<number>(0);
   const nextKmRef = useRef(1);
+  const latKalmanRef = useRef<KalmanFilter1D | null>(null);
+  const lngKalmanRef = useRef<KalmanFilter1D | null>(null);
+  const paceWindowRef = useRef<{ dist: number; t: number }[]>([]);
 
   const avgPaceSec =
     distanceMeters > 10 ? elapsedSeconds / (distanceMeters / 1000) : 0;
@@ -86,15 +91,31 @@ export default function RunPage() {
   }, []);
 
   const onGpsPoint = useCallback((pos: GeolocationPosition) => {
-    const { latitude: lat, longitude: lng, altitude: alt } = pos.coords;
-    const t = Date.now();
-    const newPoint: GpsPoint = { lat, lng, alt, t };
+    const { latitude: rawLat, longitude: rawLng, altitude: alt, accuracy } = pos.coords;
 
+    // 1. Accuracy filter — skip fixes with high horizontal error
+    if (accuracy > 20) return;
+
+    const t = Date.now();
+
+    // 2. Kalman filter — smooth lat/lng to reduce path zigzag
+    if (!latKalmanRef.current) {
+      latKalmanRef.current = new KalmanFilter1D(rawLat);
+      lngKalmanRef.current = new KalmanFilter1D(rawLng);
+    }
+    const lat = latKalmanRef.current.update(rawLat, accuracy);
+    const lng = lngKalmanRef.current!.update(rawLng, accuracy);
+
+    const newPoint: GpsPoint = { lat, lng, alt, t };
     setCurrentPos({ lat, lng });
 
     if (lastPointRef.current) {
       const d = haversineDistance(lastPointRef.current, newPoint);
-      if (d < 50) { // ignore GPS jumps > 50 m between ticks
+      const dt = (t - lastPointRef.current.t) / 1000; // seconds between fixes
+      const speed = dt > 0 ? d / dt : Infinity;
+
+      // 3. Speed-based outlier rejection — discard if implied speed > 12 m/s (~43 km/h)
+      if (speed <= 12) {
         distanceRef.current += d;
         setDistanceMeters(distanceRef.current);
 
@@ -106,6 +127,21 @@ export default function RunPage() {
             elevationAvailableRef.current = true;
           }
           setElevationGain(Math.round(elevationRef.current));
+        }
+
+        // 4. Rolling 30-second pace window
+        paceWindowRef.current.push({ dist: distanceRef.current, t });
+        const cutoff = t - 30_000;
+        while (paceWindowRef.current.length > 1 && paceWindowRef.current[0].t < cutoff) {
+          paceWindowRef.current.shift();
+        }
+        const win = paceWindowRef.current;
+        if (win.length >= 2) {
+          const windowDist = distanceRef.current - win[0].dist;
+          const windowSecs = (t - win[0].t) / 1000;
+          if (windowDist > 2 && windowSecs >= 5) {
+            setCurrentPace(windowSecs / (windowDist / 1000));
+          }
         }
 
         // splits
@@ -164,6 +200,11 @@ export default function RunPage() {
     stopWatch();
     stopInterval();
     releaseWakeLock();
+    // Reset position filter and pace window so resume starts fresh
+    latKalmanRef.current = null;
+    lngKalmanRef.current = null;
+    paceWindowRef.current = [];
+    setCurrentPace(0);
     setPhase("paused");
   }, [stopWatch, stopInterval, releaseWakeLock]);
 
@@ -228,12 +269,16 @@ export default function RunPage() {
     setNotes("");
     setStartedAt(null);
     setSaveError(null);
+    setCurrentPace(0);
     distanceRef.current = 0;
     elevationRef.current = 0;
     elevationAvailableRef.current = false;
     splitsRef.current = [];
     lastPointRef.current = null;
     nextKmRef.current = 1;
+    latKalmanRef.current = null;
+    lngKalmanRef.current = null;
+    paceWindowRef.current = [];
   }, []);
 
   useEffect(() => {
@@ -317,7 +362,7 @@ export default function RunPage() {
         }}
       >
         <div className="flex items-start gap-8">
-          <MapStat label={`Pace ${paceLabel(unit)}`} value={avgPaceSec > 0 ? formatPace(avgPaceSec, unit) : "--:--"} shadow={STAT_SHADOW} />
+          <MapStat label={`Pace ${paceLabel(unit)}`} value={currentPace > 0 ? formatPace(currentPace, unit) : (avgPaceSec > 0 ? formatPace(avgPaceSec, unit) : "--:--")} shadow={STAT_SHADOW} />
           <MapStat label="Duration" value={formatDuration(elapsedSeconds)} shadow={STAT_SHADOW} />
           <MapStat label={unit === "mi" ? "Elev (ft)" : "Elev (m)"} value={formatElevation(elevationGain, unit)} shadow={STAT_SHADOW} />
         </div>

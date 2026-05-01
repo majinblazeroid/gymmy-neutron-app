@@ -12,6 +12,32 @@ export interface Split {
   pace_sec: number;
 }
 
+// 1D Kalman filter for GPS coordinate smoothing.
+// Process noise Q ~ 3e-9 ≈ movement variance of ~6 m/step in degrees².
+// Measurement variance R is derived from GeolocationCoordinates.accuracy.
+export class KalmanFilter1D {
+  private x: number;
+  private P: number;
+  private static readonly Q = 3e-9;
+
+  constructor(initialValue: number) {
+    this.x = initialValue;
+    this.P = 1;
+  }
+
+  update(measurement: number, accuracyMeters: number): number {
+    // R: convert GPS accuracy radius (m) to variance in degrees²
+    // 1° lat ≈ 111 000 m; clamp accuracy floor at 1 m to avoid division edge cases
+    const sigma = Math.max(accuracyMeters, 1) / 111_000;
+    const R = sigma * sigma;
+    this.P += KalmanFilter1D.Q;
+    const K = this.P / (this.P + R);
+    this.x += K * (measurement - this.x);
+    this.P *= 1 - K;
+    return this.x;
+  }
+}
+
 const R = 6371000; // Earth radius in metres
 
 export function haversineDistance(
