@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (sessionError || !session) {
+    console.error("workout session insert error:", sessionError);
     return NextResponse.json({ error: sessionError?.message }, { status: 500 });
   }
 
@@ -80,11 +81,11 @@ export async function POST(req: NextRequest) {
     }) => ({
       session_id: session.id,
       exercise_id: s.exerciseId,
-      set_number: s.setNumber,
-      weight: s.weight ?? null,
+      set_number: Math.round(s.setNumber),
+      weight: s.weight != null ? parseFloat(String(s.weight)) : null,
       unit: s.unit ?? null,
-      reps: s.reps ?? null,
-      duration_seconds: s.durationSeconds ?? null,
+      reps: s.reps != null ? Math.round(s.reps) : null,
+      duration_seconds: s.durationSeconds != null ? Math.round(s.durationSeconds) : null,
       is_warmup: s.isWarmup ?? false,
       side: s.side ?? null,
       note: s.note ?? null,
@@ -92,6 +93,7 @@ export async function POST(req: NextRequest) {
 
     const { error: setsError } = await supabase.from("workout_sets").insert(rows);
     if (setsError) {
+      console.error("workout sets insert error:", setsError);
       return NextResponse.json({ error: setsError.message }, { status: 500 });
     }
   }
