@@ -42,10 +42,12 @@ interface ExerciseStat {
   previous: number | null;
   oldest: number | null;
   unit: string;
+  currentMaxReps: number | null;
+  prevMaxReps: number | null;
 }
 
 function buildExerciseStat(sessions: WorkoutSession[], exerciseId: string): ExerciseStat | null {
-  const points: { value: number; isBodyweight: boolean; unit: string }[] = [];
+  const points: { value: number; isBodyweight: boolean; unit: string; maxReps: number | null }[] = [];
   for (const s of [...sessions].sort((a, b) => a.date.localeCompare(b.date))) {
     const ws = (s.sets ?? []).filter((w) => w.exerciseId === exerciseId && !w.isWarmup);
     if (!ws.length) continue;
@@ -53,12 +55,14 @@ function buildExerciseStat(sessions: WorkoutSession[], exerciseId: string): Exer
     if (hasWeight) {
       const avg = ws.reduce((a, w) => a + (w.weight ?? 0), 0) / ws.length;
       const unit = ws.find((w) => w.unit)?.unit ?? "kg";
-      points.push({ value: Math.round(avg * 10) / 10, isBodyweight: false, unit });
+      const repsArr = ws.filter((w) => (w.reps ?? 0) > 0).map((w) => w.reps as number);
+      const maxReps = repsArr.length > 0 ? Math.max(...repsArr) : null;
+      points.push({ value: Math.round(avg * 10) / 10, isBodyweight: false, unit, maxReps });
     } else {
       const setsWithReps = ws.filter((w) => (w.reps ?? 0) > 0);
       if (!setsWithReps.length) continue;
       const avg = setsWithReps.reduce((a, w) => a + (w.reps ?? 0), 0) / setsWithReps.length;
-      points.push({ value: Math.round(avg * 10) / 10, isBodyweight: true, unit: "reps" });
+      points.push({ value: Math.round(avg * 10) / 10, isBodyweight: true, unit: "reps", maxReps: null });
     }
   }
   if (!points.length) return null;
@@ -70,6 +74,8 @@ function buildExerciseStat(sessions: WorkoutSession[], exerciseId: string): Exer
     previous: points.length >= 2 ? points[points.length - 2].value : null,
     oldest:   points.length >= 2 ? points[0].value : null,
     unit: last.unit,
+    currentMaxReps: last.maxReps,
+    prevMaxReps: points.length >= 2 ? points[points.length - 2].maxReps ?? null : null,
   };
 }
 
@@ -85,6 +91,7 @@ function Delta({ current, compare, label }: { current: number; compare: number; 
 }
 
 function ExerciseStatRow({ stat, name }: { stat: ExerciseStat; name: string }) {
+  const showReps = !stat.isBodyweight && stat.currentMaxReps !== null;
   return (
     <div className="py-5">
       <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-2">{name}</p>
@@ -96,6 +103,16 @@ function ExerciseStatRow({ stat, name }: { stat: ExerciseStat; name: string }) {
           </p>
           <p className="text-xs text-gray-400 mt-1.5">
             {stat.isBodyweight ? "avg reps / set" : "avg working weight"}
+            {showReps && (
+              <span className="ml-2">
+                · up to {stat.currentMaxReps} reps
+                {stat.prevMaxReps !== null && stat.prevMaxReps !== stat.currentMaxReps && (
+                  <span className={stat.currentMaxReps! > stat.prevMaxReps ? " text-green-500" : " text-red-400"}>
+                    {" "}({stat.currentMaxReps! > stat.prevMaxReps! ? "+" : ""}{stat.currentMaxReps! - stat.prevMaxReps!} vs last)
+                  </span>
+                )}
+              </span>
+            )}
           </p>
         </div>
         <div className="flex flex-col items-end gap-1">

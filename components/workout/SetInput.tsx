@@ -96,11 +96,13 @@ export default function SetInput({ set, index, exerciseType, unit, onUnitChange,
           <select
             value={set.side ?? "left"}
             onChange={(e) => update({ side: e.target.value as "left" | "right" })}
-            className="bg-gray-50 border border-gray-200 rounded-xl px-2 py-2 text-[#495057] text-xs focus:outline-none"
+            className="bg-gray-50 border border-gray-200 rounded-xl px-2 py-2 text-[#495057] text-xs focus:outline-none flex-shrink-0"
           >
             <option value="left">L</option>
             <option value="right">R</option>
           </select>
+          <NumInput value={set.weight} onChange={(v) => update({ weight: v })} placeholder="wt" />
+          <UnitToggle unit={unit} onChange={onUnitChange} />
           <NumInput value={set.reps} onChange={(v) => update({ reps: v })} placeholder="reps" />
         </>
       )}
