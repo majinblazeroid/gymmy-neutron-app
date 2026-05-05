@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { WorkoutSession, BJJSession } from "@/lib/types";
-import { ChevronDown, ChevronUp, ChevronRight, TrendingUp } from "lucide-react";
+import { ChevronDown, ChevronUp, ChevronRight, TrendingUp, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDistance, formatDuration, formatPace, paceLabel } from "@/lib/runUtils";
 import { useRunUnit } from "@/lib/useRunUnit";
@@ -154,6 +154,14 @@ export default function HistoryPage() {
     };
   }, [mutateGym, mutateBJJ, mutateRuns]);
 
+  const handleDelete = async (entry: SessionEntry, id: string) => {
+    const url = entry.type === "gym" ? `/api/workouts?id=${id}` : `/api/bjj?id=${id}`;
+    await fetch(url, { method: "DELETE" });
+    if (entry.type === "gym") mutateGym();
+    else mutateBJJ();
+    setExpanded(null);
+  };
+
   const loading     = gymLoading || bjjLoading || runsLoading;
   const gymSessions = gym ?? [];
   const runSessions = runs ?? [];
@@ -257,7 +265,7 @@ export default function HistoryPage() {
                   <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-3">Day A</p>
                   <div className="divide-y divide-black/[0.07]">
                     {gymAEntries.map((entry) => (
-                      <SessionRow key={entry.data.id ?? ""} entry={entry} expanded={expanded} setExpanded={setExpanded} />
+                      <SessionRow key={entry.data.id ?? ""} entry={entry} expanded={expanded} setExpanded={setExpanded} onDelete={(id) => handleDelete(entry, id)} />
                     ))}
                   </div>
                 </section>
@@ -269,7 +277,7 @@ export default function HistoryPage() {
                   <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-3">Day B</p>
                   <div className="divide-y divide-black/[0.07]">
                     {gymBEntries.map((entry) => (
-                      <SessionRow key={entry.data.id ?? ""} entry={entry} expanded={expanded} setExpanded={setExpanded} />
+                      <SessionRow key={entry.data.id ?? ""} entry={entry} expanded={expanded} setExpanded={setExpanded} onDelete={(id) => handleDelete(entry, id)} />
                     ))}
                   </div>
                 </section>
@@ -281,7 +289,7 @@ export default function HistoryPage() {
                   <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-3">BJJ</p>
                   <div className="divide-y divide-black/[0.07]">
                     {bjjSorted.map((entry) => (
-                      <SessionRow key={entry.data.id ?? ""} entry={entry} expanded={expanded} setExpanded={setExpanded} />
+                      <SessionRow key={entry.data.id ?? ""} entry={entry} expanded={expanded} setExpanded={setExpanded} onDelete={(id) => handleDelete(entry, id)} />
                     ))}
                   </div>
                 </section>
@@ -326,11 +334,13 @@ export default function HistoryPage() {
   );
 }
 
-function SessionRow({ entry, expanded, setExpanded }: {
+function SessionRow({ entry, expanded, setExpanded, onDelete }: {
   entry: SessionEntry;
   expanded: string | null;
   setExpanded: (id: string | null) => void;
+  onDelete: (id: string) => Promise<void>;
 }) {
+  const [deleting, setDeleting] = useState(false);
   const id     = entry.data.id ?? "";
   const isOpen = expanded === id;
 
@@ -368,6 +378,14 @@ function SessionRow({ entry, expanded, setExpanded }: {
               <span className="font-medium text-[#495057]">Rounds</span> {(entry.data as BJJSession).rounds}
             </p>
           )}
+          <button
+            onClick={async (e) => { e.stopPropagation(); setDeleting(true); await onDelete(id); }}
+            disabled={deleting}
+            className="mt-1 flex items-center gap-1 text-xs text-gray-300 hover:text-red-400 active:opacity-70 transition-colors disabled:opacity-40"
+          >
+            <Trash2 size={12} />
+            {deleting ? "Deleting…" : "Delete session"}
+          </button>
         </div>
       )}
 
@@ -397,6 +415,14 @@ function SessionRow({ entry, expanded, setExpanded }: {
                 </div>
               </div>
             ))}
+            <button
+              onClick={async (e) => { e.stopPropagation(); setDeleting(true); await onDelete(id); }}
+              disabled={deleting}
+              className="flex items-center gap-1 text-xs text-gray-300 hover:text-red-400 active:opacity-70 transition-colors disabled:opacity-40"
+            >
+              <Trash2 size={12} />
+              {deleting ? "Deleting…" : "Delete session"}
+            </button>
           </div>
         );
       })()}
