@@ -41,6 +41,21 @@ export interface ProgressionResult {
   proof: string[];
   confidence: "high" | "medium" | "low";
   unit?: string;
+  lastSession?: LastSessionSummary | null;
+}
+
+export interface LastSessionSet {
+  setNumber: number;
+  weight?: number | null;
+  unit?: string | null;
+  reps?: number | null;
+  durationSeconds?: number | null;
+  side?: string | null;
+}
+
+export interface LastSessionSummary {
+  date: string;
+  sets: LastSessionSet[];
 }
 
 // ── Action constants ──────────────────────────────────────────────────────────

@@ -7,6 +7,7 @@ import SetInput from "./SetInput";
 import { cn } from "@/lib/utils";
 import {
   ProgressionResult,
+  LastSessionSummary,
   ACTION_NO_DATA,
   ACTION_INCREASE_WAVE,
   ACTION_HOLD,
@@ -109,11 +110,8 @@ export default function ExerciseCard({ exercise, sets, onSetsChange }: ExerciseC
 
   const hasNotes = isFrontRackCarry || !!exercise.notes;
 
-  // Fetch progression suggestion for weighted / timed_carry / bodyweight exercises
+  // Fetch progression data for all exercise types (lastSession + suggestion where applicable)
   useEffect(() => {
-    const fetchableTypes = ["weighted", "bodyweight"];
-    if (!fetchableTypes.includes(exercise.type)) return;
-
     const params = new URLSearchParams({
       exerciseId:    exercise.id,
       exerciseName:  exercise.name,
@@ -124,10 +122,7 @@ export default function ExerciseCard({ exercise, sets, onSetsChange }: ExerciseC
 
     fetch(`/api/progression?${params}`)
       .then((r) => r.json())
-      .then((data: ProgressionResult) => {
-        // Don't show anything if there's no data yet
-        if (data.action !== ACTION_NO_DATA) setSuggestion(data);
-      })
+      .then((data: ProgressionResult) => { setSuggestion(data); })
       .catch(() => {/* offline — skip silently */});
   }, [exercise.id, exercise.name, exercise.type, exercise.suggestedReps, exercise.suggestedSets]);
 
@@ -205,10 +200,15 @@ export default function ExerciseCard({ exercise, sets, onSetsChange }: ExerciseC
         )}
 
         {/* Progression suggestion */}
-        {suggestion && (
+        {suggestion && suggestion.action !== ACTION_NO_DATA && (
           <SuggestionBanner result={suggestion} />
         )}
       </div>
+
+      {/* Last session split */}
+      {suggestion?.lastSession && (
+        <LastSessionBlock lastSession={suggestion.lastSession} exerciseType={exercise.type} />
+      )}
 
       {/* Sets */}
       {sets.length > 0 && (
@@ -237,6 +237,33 @@ export default function ExerciseCard({ exercise, sets, onSetsChange }: ExerciseC
           <Plus size={15} />
           Add Set
         </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Last session block ────────────────────────────────────────────────────────
+
+function LastSessionBlock({ lastSession }: { lastSession: LastSessionSummary; exerciseType: string }) {
+  return (
+    <div className="px-5 pb-3">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+        Last session · {lastSession.date}
+      </p>
+      <div className="space-y-0.5">
+        {lastSession.sets.map((s) => {
+          const parts: string[] = [];
+          if (s.side) parts.push(s.side === "left" ? "L" : "R");
+          if (s.weight != null) parts.push(`${s.weight}${s.unit ?? "kg"}`);
+          if (s.reps != null) parts.push(`×${s.reps}`);
+          if (s.durationSeconds != null) parts.push(`${s.durationSeconds}s`);
+          return (
+            <p key={s.setNumber} className="text-xs text-gray-400">
+              <span className="text-gray-300 mr-1.5">{s.setNumber}</span>
+              {parts.join(" ")}
+            </p>
+          );
+        })}
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/db";
-import { computeProgression, PSession, PSet } from "@/lib/progressionV2";
+import { computeProgression, PSession, PSet, LastSessionSummary } from "@/lib/progressionV2";
 
 /**
  * GET /api/progression?exerciseId=X&exerciseType=weighted&suggestedReps=6-8&suggestedSets=3
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
   const { data, error } = await supabase
     .from("workout_sets")
     .select(
-      "set_number, weight, unit, reps, is_warmup, session_id, workout_sessions(date, pre_feeling, post_feeling)"
+      "set_number, weight, unit, reps, duration_seconds, side, is_warmup, session_id, workout_sessions(date, pre_feeling, post_feeling)"
     )
     .eq("exercise_id", exerciseId)
     .order("set_number", { ascending: true });
@@ -34,16 +34,54 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  type RawRow = {
+    set_number: number;
+    weight: number | null;
+    unit: string | null;
+    reps: number | null;
+    duration_seconds: number | null;
+    side: string | null;
+    is_warmup: boolean;
+    session_id: string;
+    workout_sessions: { date: string; pre_feeling: number; post_feeling: number } | null;
+  };
+  const rawRows = (data ?? []) as unknown as RawRow[];
+
+  // Extract lastSession from raw rows (works for all exercise types)
+  const sessionRowMap = new Map<string, { date: string; rows: RawRow[] }>();
+  for (const row of rawRows) {
+    const sess = row.workout_sessions;
+    if (!sess || !row.session_id) continue;
+    if (!sessionRowMap.has(row.session_id))
+      sessionRowMap.set(row.session_id, { date: sess.date, rows: [] });
+    sessionRowMap.get(row.session_id)!.rows.push(row);
+  }
+  const lastWorking = [...sessionRowMap.values()]
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .find((s) => s.rows.some((r) => !r.is_warmup));
+  const lastSession: LastSessionSummary | null = lastWorking
+    ? {
+        date: lastWorking.date,
+        sets: lastWorking.rows
+          .filter((r) => !r.is_warmup)
+          .sort((a, b) => a.set_number - b.set_number)
+          .map((r) => ({
+            setNumber:       r.set_number,
+            weight:          r.weight          ?? null,
+            unit:            r.unit            ?? null,
+            reps:            r.reps            ?? null,
+            durationSeconds: r.duration_seconds ?? null,
+            side:            r.side            ?? null,
+          })),
+      }
+    : null;
+
   // Group rows by session_id, building PSession[]
   const sessionMap = new Map<string, PSession>();
   let detectedUnit = "kg";
 
-  for (const row of data ?? []) {
-    const sess = row.workout_sessions as unknown as {
-      date: string;
-      pre_feeling: number;
-      post_feeling: number;
-    } | null;
+  for (const row of rawRows) {
+    const sess = row.workout_sessions;
     if (!sess || !row.session_id) continue;
 
     if (!sessionMap.has(row.session_id)) {
@@ -61,7 +99,7 @@ export async function GET(req: NextRequest) {
       reps:      row.reps      ?? 0,
       isWarmup:  row.is_warmup ?? false,
     };
-    if ((row as { unit?: string }).unit) detectedUnit = (row as { unit?: string }).unit!;
+    if (row.unit) detectedUnit = row.unit;
 
     sessionMap.get(row.session_id)!.sets.push(pSet);
   }
@@ -81,5 +119,5 @@ export async function GET(req: NextRequest) {
     today,
   );
 
-  return NextResponse.json({ ...result, unit: detectedUnit });
+  return NextResponse.json({ ...result, unit: detectedUnit, lastSession });
 }
