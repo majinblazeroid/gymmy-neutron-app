@@ -31,31 +31,31 @@ function prescription(ex) {
   return `${ex.suggested_sets} Set${ex.suggested_sets > 1 ? "s" : ""} - ${ex.suggested_reps}`;
 }
 
+function formatSet(s) {
+  if (s.duration_seconds != null && s.weight == null) {
+    const m = Math.floor(s.duration_seconds / 60);
+    const sec = s.duration_seconds % 60;
+    return m > 0 ? `${m}:${String(sec).padStart(2, "0")}` : `${sec}s`;
+  }
+  if (s.duration_seconds != null && s.weight != null)
+    return `${s.weight}*${s.duration_seconds}s`;
+  if (s.weight != null && s.reps != null) {
+    const side = s.side ? (s.side === "left" ? "L:" : "R:") : "";
+    return `${side}${s.weight}*${s.reps}`;
+  }
+  if (s.reps != null && s.side)
+    return `${s.side === "left" ? "L" : "R"}:${s.reps}`;
+  if (s.reps != null) return `${s.reps}`;
+  return "";
+}
+
 function summarise(sets) {
   if (!sets || sets.length === 0) return "";
   return [...sets]
     .sort((a, b) => a.set_number - b.set_number)
     .map(s => {
-      // duration only (bodyweight timed)
-      if (s.duration_seconds != null && s.weight == null) {
-        const m = Math.floor(s.duration_seconds / 60);
-        const sec = s.duration_seconds % 60;
-        return m > 0 ? `${m}:${String(sec).padStart(2, "0")}` : `${sec}s`;
-      }
-      // weighted + duration (timed carry)
-      if (s.duration_seconds != null && s.weight != null)
-        return `${s.weight}*${s.duration_seconds}s`;
-      // weighted + reps
-      if (s.weight != null && s.reps != null) {
-        const side = s.side ? (s.side === "left" ? "L:" : "R:") : "";
-        return `${side}${s.weight}*${s.reps}`;
-      }
-      // bodyweight unilateral
-      if (s.reps != null && s.side)
-        return `${s.side === "left" ? "L" : "R"}:${s.reps}`;
-      // bodyweight reps
-      if (s.reps != null) return `${s.reps}`;
-      return "";
+      const raw = formatSet(s);
+      return raw ? (s.is_warmup ? `(${raw})` : raw) : "";
     })
     .filter(Boolean)
     .join(" + ");
@@ -72,12 +72,11 @@ for (const s of sessions) {
   sessionMap[s.date][s.day] = s;
 }
 
-// setsMap: sessionId → exerciseName → non-warmup sets
+// setsMap: sessionId → exerciseName → all sets (warmup sets included, shown in parens)
 const setsMap = {};
 for (const s of sessions) {
   setsMap[s.id] = {};
   for (const ws of (s.workout_sets ?? [])) {
-    if (ws.is_warmup) continue;
     const name = ws.exercise?.name;
     if (!name) continue;
     if (!setsMap[s.id][name]) setsMap[s.id][name] = [];
