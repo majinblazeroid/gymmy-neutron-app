@@ -100,7 +100,9 @@ export default function ExerciseCard({ exercise, sets, onSetsChange }: ExerciseC
   const isBackExtension = exercise.name === "Back Extensions";
   const isFrontRackCarry = exercise.name === "Front Rack Carry";
   const [mode, setMode]               = useState<BackExtensionMode>("reps");
-  const [unit, setUnit]               = useState<WeightUnit>(exercise.defaultUnit ?? "kg");
+  const [unit, setUnit]               = useState<WeightUnit>(
+    () => sets.find((s) => s.unit)?.unit ?? exercise.defaultUnit ?? "kg"
+  );
   const [showNotes, setShowNotes]     = useState(false);
   const [suggestion, setSuggestion]   = useState<ProgressionResult | null>(null);
 
