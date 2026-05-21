@@ -105,30 +105,30 @@ function BigTile({
   done?: boolean;
 }) {
   return (
-    <Link href={href} onClick={onClick} className="flex-1 min-h-0">
+    <Link href={href} onClick={onClick} className="flex-1 min-h-0 flex flex-col">
       <div
-        className="rounded-3xl h-full flex flex-col p-5 transition-opacity active:opacity-75"
+        className="flex-1 rounded-3xl flex flex-row items-center gap-5 px-6 py-5 transition-opacity active:opacity-75"
         style={{ background: color, opacity: done ? 0.6 : 1 }}
       >
-        {/* Icon — upper area */}
-        <div className="flex-1 flex items-center justify-center" style={{ color: "rgba(73,80,87,0.35)" }}>
-          {icon}
-        </div>
-
-        {/* Label — lower third */}
-        <div>
+        {/* Text — left */}
+        <div className="flex-1 min-w-0">
           {done && (
             <div className="flex items-center gap-1 mb-1">
               <CheckCircle size={11} style={{ color: "rgba(73,80,87,0.5)" }} />
               <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "rgba(73,80,87,0.5)" }}>Done</span>
             </div>
           )}
-          <p className="text-[11px] font-medium uppercase tracking-wider leading-none mb-1.5 truncate" style={{ color: "rgba(73,80,87,0.55)" }}>
-            {sublabel}
-          </p>
-          <p className="text-xl font-black uppercase tracking-wide leading-none" style={{ color: "#495057" }}>
+          <p className="text-2xl font-black uppercase tracking-wide leading-none" style={{ color: "#495057" }}>
             {label}
           </p>
+          <p className="text-xs font-medium uppercase tracking-wider mt-1.5 truncate" style={{ color: "rgba(73,80,87,0.55)" }}>
+            {sublabel}
+          </p>
+        </div>
+
+        {/* Icon — right */}
+        <div className="flex-shrink-0" style={{ color: "rgba(73,80,87,0.35)" }}>
+          {icon}
         </div>
       </div>
     </Link>
