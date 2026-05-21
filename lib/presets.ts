@@ -4,24 +4,26 @@ export const EXERCISES: Omit<Exercise, "id" | "created_at">[] = [
   // Day A
   { name: "Back Extensions", type: "bodyweight", suggestedSets: 1, suggestedReps: "20 reps", notes: "Supports timed hold, reps, or weighted reps" },
   { name: "Side Hyper Extensions", type: "unilateral", suggestedSets: 2, suggestedReps: "AMRAP", notes: "Left side first always. Match reps on right." },
-  { name: "RDL", type: "weighted", defaultUnit: "kg", suggestedSets: 3, suggestedReps: "6-8" },
-  { name: "Pull Ups", type: "bodyweight", suggestedSets: 3, suggestedReps: "AMRAP", notes: "Optional weight for weighted pull-ups." },
-  { name: "Bench Press", type: "weighted", defaultUnit: "kg", suggestedSets: 3, suggestedReps: "6-8" },
-  { name: "Front Rack Carry", type: "timed_carry", defaultUnit: "lbs", suggestedSets: 3, suggestedReps: "30-40s", notes: "Weight is per side." },
+  { name: "RDL", type: "weighted", defaultUnit: "kg", suggestedSets: 4, suggestedReps: "6-8" },
+  { name: "Bench Press", type: "weighted", defaultUnit: "kg", suggestedSets: 4, suggestedReps: "6-8", notes: "Fresh — heaviest press of the day" },
+  { name: "Pull Ups", type: "bodyweight", suggestedSets: 4, suggestedReps: "AMRAP", notes: "Add weight once regularly hitting 10+" },
+  { name: "Bulgarian Split Squat", type: "weighted", defaultUnit: "kg", suggestedSets: 3, suggestedReps: "8-12 per leg", notes: "Quad volume + single-leg balance." },
+  { name: "Front Rack Carry", type: "timed_carry", defaultUnit: "lbs", suggestedSets: 3, suggestedReps: "40s", notes: "10s per side. Weight is per side." },
   // Day B only
-  { name: "Barbell Squat", type: "weighted", defaultUnit: "kg", suggestedSets: 3, suggestedReps: "8-10" },
+  { name: "Barbell Squat", type: "weighted", defaultUnit: "kg", suggestedSets: 4, suggestedReps: "8-10" },
+  { name: "Incline DB Bench", type: "weighted", defaultUnit: "kg", suggestedSets: 4, suggestedReps: "6-8", notes: "First — fresh chest, load it heavy" },
+  { name: "OHP", type: "weighted", defaultUnit: "kg", suggestedSets: 3, suggestedReps: "5-6", notes: "After incline — shoulder finisher" },
   { name: "Chest Supported Row", type: "weighted", defaultUnit: "lbs", suggestedSets: 3, suggestedReps: "8-10" },
   { name: "Dead Bug", type: "bodyweight", suggestedSets: 3, suggestedReps: "8 per side", notes: "Optional weight." },
-  { name: "OHP", type: "weighted", defaultUnit: "kg", suggestedSets: 3, suggestedReps: "5-6" },
-  { name: "Incline DB Bench", type: "weighted", defaultUnit: "kg", suggestedSets: 3, suggestedReps: "4-6", notes: "Optional — only done some weeks." },
 ];
 
 export const DAY_A_ORDER = [
   "Back Extensions",
   "Side Hyper Extensions",
   "RDL",
-  "Pull Ups",
   "Bench Press",
+  "Pull Ups",
+  "Bulgarian Split Squat",
   "Front Rack Carry",
 ];
 
@@ -29,10 +31,10 @@ export const DAY_B_ORDER = [
   "Back Extensions",
   "Side Hyper Extensions",
   "Barbell Squat",
+  "Incline DB Bench",
+  "OHP",
   "Chest Supported Row",
   "Dead Bug",
-  "OHP",
-  "Incline DB Bench",
 ];
 
 export const WARMUPS_A: Omit<Warmup, "id">[] = [
