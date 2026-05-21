@@ -1,38 +1,24 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { WorkoutSession, BJJSession } from "@/lib/types";
-import { ChevronDown, ChevronUp, ChevronRight, TrendingUp, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, TrendingUp, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatDistance, formatDuration, formatPace, paceLabel } from "@/lib/runUtils";
-import { useRunUnit } from "@/lib/useRunUnit";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
-
-interface RunSession {
-  id: string;
-  date: string;
-  duration_seconds: number | null;
-  distance_meters: number | null;
-  avg_pace_sec_per_km: number | null;
-  elevation_gain_meters: number | null;
-  notes: string | null;
-}
 
 type SessionEntry =
   | { type: "gym"; data: WorkoutSession }
   | { type: "bjj"; data: BJJSession };
 
-type Filter = "all" | "gym" | "bjj" | "run";
+type Filter = "all" | "gym" | "bjj";
 type View   = "log" | "charts";
 
 const FILTER_ACTIVE: Record<Filter, { bg: string; text: string }> = {
   all: { bg: "#495057", text: "#ffffff" },
   gym: { bg: "#adf7b6", text: "#495057" },
   bjj: { bg: "#ffc09f", text: "#495057" },
-  run: { bg: "#79addc", text: "#495057" },
 };
 
 interface ExerciseStat {
@@ -132,19 +118,16 @@ export default function HistoryPage() {
   const [filter,   setFilter]   = useState<Filter>("all");
   const [view,     setView]     = useState<View>("log");
   const [expanded, setExpanded] = useState<string | null>(null);
-  const { unit } = useRunUnit();
-  const router = useRouter();
 
-  const { data: gym, isLoading: gymLoading, mutate: mutateGym }    = useSWR<WorkoutSession[]>("/api/workouts", fetcher);
-  const { data: bjj, isLoading: bjjLoading, mutate: mutateBJJ }    = useSWR<BJJSession[]>("/api/bjj", fetcher);
-  const { data: runs, isLoading: runsLoading, mutate: mutateRuns } = useSWR<RunSession[]>("/api/runs", fetcher);
+  const { data: gym, isLoading: gymLoading, mutate: mutateGym } = useSWR<WorkoutSession[]>("/api/workouts", fetcher);
+  const { data: bjj, isLoading: bjjLoading, mutate: mutateBJJ } = useSWR<BJJSession[]>("/api/bjj", fetcher);
 
   useEffect(() => {
     let startY = 0;
     const onStart = (e: TouchEvent) => { startY = e.touches[0].clientY; };
     const onEnd   = (e: TouchEvent) => {
       const delta = e.changedTouches[0].clientY - startY;
-      if (delta > 60 && window.scrollY === 0) { mutateGym(); mutateBJJ(); mutateRuns(); }
+      if (delta > 60 && window.scrollY === 0) { mutateGym(); mutateBJJ(); }
     };
     document.addEventListener("touchstart", onStart, { passive: true });
     document.addEventListener("touchend",   onEnd,   { passive: true });
@@ -152,7 +135,7 @@ export default function HistoryPage() {
       document.removeEventListener("touchstart", onStart);
       document.removeEventListener("touchend",   onEnd);
     };
-  }, [mutateGym, mutateBJJ, mutateRuns]);
+  }, [mutateGym, mutateBJJ]);
 
   const handleDelete = async (entry: SessionEntry, id: string) => {
     const url = entry.type === "gym" ? `/api/workouts?id=${id}` : `/api/bjj?id=${id}`;
@@ -162,9 +145,8 @@ export default function HistoryPage() {
     setExpanded(null);
   };
 
-  const loading     = gymLoading || bjjLoading || runsLoading;
+  const loading    = gymLoading || bjjLoading;
   const gymSessions = gym ?? [];
-  const runSessions = runs ?? [];
 
   const gymEntries = (gym ?? []).map((d) => ({ type: "gym" as const, data: d }));
   const bjjEntries = (bjj ?? []).map((d) => ({ type: "bjj" as const, data: d }));
@@ -181,7 +163,6 @@ export default function HistoryPage() {
   const showGymA = (filter === "all" || filter === "gym") && gymAEntries.length > 0;
   const showGymB = (filter === "all" || filter === "gym") && gymBEntries.length > 0;
   const showBjj  = (filter === "all" || filter === "bjj") && bjjSorted.length > 0;
-  const showRuns = (filter === "all" || filter === "run") && runSessions.length > 0;
 
   return (
     <div className="pt-8 pb-6 space-y-6">
@@ -239,7 +220,7 @@ export default function HistoryPage() {
         <div className="space-y-6">
           {/* Filter pills */}
           <div className="flex gap-2 flex-wrap">
-            {(["all", "gym", "bjj", "run"] as Filter[]).map((f) => (
+            {(["all", "gym", "bjj"] as Filter[]).map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
@@ -253,7 +234,7 @@ export default function HistoryPage() {
           </div>
 
           {loading && <p className="text-gray-400 text-sm">Loading...</p>}
-          {!loading && !showGymA && !showGymB && !showBjj && !showRuns && (
+          {!loading && !showGymA && !showGymB && !showBjj && (
             <p className="text-center py-16 text-gray-400 text-sm">No sessions yet.</p>
           )}
 
@@ -290,38 +271,6 @@ export default function HistoryPage() {
                   <div className="divide-y divide-black/[0.07]">
                     {bjjSorted.map((entry) => (
                       <SessionRow key={entry.data.id ?? ""} entry={entry} expanded={expanded} setExpanded={setExpanded} onDelete={(id) => handleDelete(entry, id)} />
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {/* Run — cool-horizon */}
-              {showRuns && (
-                <section className="rounded-3xl p-4" style={{ background: "rgba(121,173,220,0.22)" }}>
-                  <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-3">Running</p>
-                  <div className="divide-y divide-black/[0.07]">
-                    {runSessions.map((run) => (
-                      <button
-                        key={run.id}
-                        onClick={() => router.push(`/run/${run.id}`)}
-                        className="w-full flex items-center gap-3 py-4 text-left active:opacity-70 transition-opacity"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-[#495057] text-sm">
-                            {run.distance_meters != null
-                              ? `${formatDistance(run.distance_meters, unit)} ${unit}`
-                              : "Run"}
-                          </p>
-                          <p className="text-gray-400 text-xs mt-0.5">
-                            {run.date}
-                            {run.duration_seconds != null ? ` · ${formatDuration(run.duration_seconds)}` : ""}
-                            {run.avg_pace_sec_per_km != null
-                              ? ` · ${formatPace(run.avg_pace_sec_per_km, unit)}${paceLabel(unit)}`
-                              : ""}
-                          </p>
-                        </div>
-                        <ChevronRight size={15} className="text-gray-300 flex-shrink-0" />
-                      </button>
                     ))}
                   </div>
                 </section>
