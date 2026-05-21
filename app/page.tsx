@@ -41,38 +41,33 @@ export default function Dashboard() {
         <HudStat label="Total" value={total} />
       </div>
 
-      {/* 3-tile layout: A/B side by side, BJJ full width below */}
+      {/* 3-tile layout: all stacked vertically */}
       <div className="flex-1 flex flex-col gap-3" style={{ minHeight: 0 }}>
-        <div className="flex-1 grid grid-cols-2 gap-3">
-          <BigTile
-            href={weekStatus.dayA.done ? "/workout?day=A&view=true" : "/workout?day=A"}
-            onClick={!weekStatus.dayA.done ? () => { try { localStorage.removeItem("gymmy_workout_draft"); } catch {} } : undefined}
-            label="Day A"
-            sublabel={weekStatus.dayA.done ? (weekStatus.dayA.date ? `Done ${weekStatus.dayA.date}` : "Completed") : "Ready to log"}
-            icon={<Dumbbell size={34} />}
-            color="#adf7b6"
-            done={weekStatus.dayA.done}
-          />
-          <BigTile
-            href={weekStatus.dayB.done ? "/workout?day=B&view=true" : "/workout?day=B"}
-            onClick={!weekStatus.dayB.done ? () => { try { localStorage.removeItem("gymmy_workout_draft"); } catch {} } : undefined}
-            label="Day B"
-            sublabel={weekStatus.dayB.done ? (weekStatus.dayB.date ? `Done ${weekStatus.dayB.date}` : "Completed") : "Ready to log"}
-            icon={<Dumbbell size={34} />}
-            color="#ffee93"
-            done={weekStatus.dayB.done}
-          />
-        </div>
-        <div className="flex-1">
-          <BigTile
-            href="/bjj"
-            label="BJJ"
-            sublabel={weekStatus.bjjCount > 0 ? `${weekStatus.bjjCount} this week` : "Track training"}
-            icon={<Shield size={34} />}
-            color="#ffc09f"
-            fullWidth
-          />
-        </div>
+        <BigTile
+          href={weekStatus.dayA.done ? "/workout?day=A&view=true" : "/workout?day=A"}
+          onClick={!weekStatus.dayA.done ? () => { try { localStorage.removeItem("gymmy_workout_draft"); } catch {} } : undefined}
+          label="Day A"
+          sublabel={weekStatus.dayA.done ? (weekStatus.dayA.date ? `Done ${weekStatus.dayA.date}` : "Completed") : "Ready to log"}
+          icon={<Dumbbell size={34} />}
+          color="#adf7b6"
+          done={weekStatus.dayA.done}
+        />
+        <BigTile
+          href={weekStatus.dayB.done ? "/workout?day=B&view=true" : "/workout?day=B"}
+          onClick={!weekStatus.dayB.done ? () => { try { localStorage.removeItem("gymmy_workout_draft"); } catch {} } : undefined}
+          label="Day B"
+          sublabel={weekStatus.dayB.done ? (weekStatus.dayB.date ? `Done ${weekStatus.dayB.date}` : "Completed") : "Ready to log"}
+          icon={<Dumbbell size={34} />}
+          color="#ffee93"
+          done={weekStatus.dayB.done}
+        />
+        <BigTile
+          href="/bjj"
+          label="BJJ"
+          sublabel={weekStatus.bjjCount > 0 ? `${weekStatus.bjjCount} this week` : "Track training"}
+          icon={<Shield size={34} />}
+          color="#ffc09f"
+        />
       </div>
     </div>
   );
@@ -100,7 +95,6 @@ function BigTile({
   icon,
   color,
   done = false,
-  fullWidth = false,
 }: {
   href: string;
   onClick?: () => void;
@@ -109,10 +103,9 @@ function BigTile({
   icon: React.ReactNode;
   color: string;
   done?: boolean;
-  fullWidth?: boolean;
 }) {
   return (
-    <Link href={href} onClick={onClick} className={fullWidth ? "block h-full" : "min-h-0"}>
+    <Link href={href} onClick={onClick} className="flex-1 min-h-0">
       <div
         className="rounded-3xl h-full flex flex-col p-5 transition-opacity active:opacity-75"
         style={{ background: color, opacity: done ? 0.6 : 1 }}
