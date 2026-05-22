@@ -1,9 +1,9 @@
-import { Exercise, Warmup, WorkoutTemplate } from "./types";
+import { Exercise, Warmup } from "./types";
 
 export const EXERCISES: Omit<Exercise, "id" | "created_at">[] = [
   // Day A
   { name: "Back Extensions", type: "bodyweight", suggestedSets: 1, suggestedReps: "20 reps", notes: "Supports timed hold, reps, or weighted reps" },
-  { name: "Side Hyper Extensions", type: "unilateral", suggestedSets: 2, suggestedReps: "AMRAP", notes: "Left side first always. Match reps on right." },
+  { name: "Side Hyper Extensions", type: "unilateral", defaultUnit: "lbs", suggestedSets: 2, suggestedReps: "AMRAP", notes: "Left side first always. Match reps on right." },
   { name: "RDL", type: "weighted", defaultUnit: "kg", suggestedSets: 4, suggestedReps: "6-8" },
   { name: "Bench Press", type: "weighted", defaultUnit: "kg", suggestedSets: 4, suggestedReps: "6-8", notes: "Fresh — heaviest press of the day" },
   { name: "Pull Ups", type: "bodyweight", suggestedSets: 4, suggestedReps: "AMRAP", notes: "Add weight once regularly hitting 10+" },
